@@ -1,4 +1,4 @@
-# Bon Raffle
+<img src="work/bonraffle_winui/Assets/logo-bon-raffle.png" alt="Bon Raffle" width="190">
 
 Нативное приложение для розыгрышей на **Windows** и **macOS**. Подходит ведущим мероприятий, организаторам конкурсов и администраторам сообществ MAX. Проводите розыгрыш среди людей, столиков и других записей или разыгрывайте призы с заданным количеством и относительным шансом. Списки можно создать прямо в приложении, загрузить из CSV или выгрузить из канала MAX через бота.
 
@@ -8,37 +8,47 @@
 
 Снимки Windows и macOS показывают демонстрационные и вымышленные тестовые данные. Интерфейс macOS реализован отдельно на SwiftUI.
 
-### Windows: участники
+<details>
+<summary>Скриншоты Windows</summary>
+
+**Участники**
 
 ![Главный экран со списком участников на Windows](docs/screenshots/home-participants-windows.png)
 
-### Windows: результат розыгрыша приза
+**Результат розыгрыша приза**
 
 ![Карточка выпавшего приза](docs/screenshots/prize-winner-windows.png)
 
-### Windows: основные настройки
+**Основные настройки**
 
 ![Основные настройки Bon Raffle на Windows](docs/screenshots/settings-general-windows.png)
 
-### Windows: настройки оформления
+**Настройки оформления**
 
 ![Настройки оформления Bon Raffle на Windows](docs/screenshots/settings-appearance-windows.png)
 
-### macOS: участники
+</details>
+
+<details>
+<summary>Скриншоты macOS</summary>
+
+**Участники**
 
 ![Главный экран со списком участников на macOS](docs/screenshots/home-participants-macos.png)
 
-### macOS: результат розыгрыша приза
+**Результат розыгрыша приза**
 
 ![Карточка выпавшего приза на macOS](docs/screenshots/prize-winner-macos.png)
 
-### macOS: основные настройки
+**Основные настройки**
 
 ![Основные настройки Bon Raffle на macOS](docs/screenshots/settings-general-macos.png)
 
-### macOS: настройки оформления
+**Настройки оформления**
 
 ![Настройки оформления Bon Raffle на macOS](docs/screenshots/settings-appearance-macos.png)
+
+</details>
 
 ## Возможности
 
@@ -83,6 +93,14 @@
 ## Хранение данных и безопасность
 
 Списки и настройки хранятся на устройстве. Токен MAX сохраняется в защищённом хранилище Windows или macOS, а CSV-выгрузка MAX - в «Загрузках».
+
+## Исходный код
+
+- [Windows](work/bonraffle_winui) — C# и WinUI 3; [тесты импорта](work/bonraffle_winui_tests) и [тесты собственных списков и призов](work/manual-roster-smoke).
+- [macOS](work/bonraffle_macos) — Swift и SwiftUI. Приложения реализованы отдельно, но используют одинаковые правила розыгрыша.
+- [Установщик Windows](work/installer) и [инструкции по сборке](BUILDING.md). Готовые `.exe` и `.dmg` доступны в [выпусках](https://github.com/bonappetitabc/BonRaffle/releases).
+
+В исходниках могут быть изменения, которые ещё не вошли в опубликованные установщики. Версию и работу каждой платформы проверяйте по соответствующему выпуску.
 
 ## Лицензия
 

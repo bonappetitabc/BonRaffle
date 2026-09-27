@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key><string>ru</string>
+    <key>CFBundleDisplayName</key><string>Bon Raffle</string>
+    <key>CFBundleExecutable</key><string>BonRaffle</string>
+    <key>CFBundleIconFile</key><string>AppIcon.icns</string>
+    <key>CFBundleIdentifier</key><string>com.bonraffle.app</string>
+    <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+    <key>CFBundleName</key><string>Bon Raffle</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>2.2.30</string>
+    <key>CFBundleVersion</key><string>2230</string>
+    <key>LSMinimumSystemVersion</key><string>15.0</string>
+    <key>LSUIElement</key><false/>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSHumanReadableCopyright</key><string>© 2026 bonappetit.abc</string>
+    <key>LSApplicationCategoryType</key><string>public.app-category.entertainment</string>
+</dict>
+</plist>
