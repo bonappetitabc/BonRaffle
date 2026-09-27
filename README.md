@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="work/bonraffle_winui/Assets/logo-bon-raffle.png" alt="Bon Raffle" width="120">
+  <img src="work/bonraffle_winui/Assets/logo-bon-raffle.png" alt="Bon Raffle" width="130">
 </p>
 
 Нативное приложение для розыгрышей на **Windows** и **macOS**. Подходит ведущим мероприятий, организаторам конкурсов и администраторам сообществ MAX. Проводите розыгрыш среди людей, столиков и других записей или разыгрывайте призы с заданным количеством и относительным шансом. Списки можно создать прямо в приложении, загрузить из CSV или выгрузить из канала MAX через бота.
