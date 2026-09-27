@@ -100,7 +100,8 @@
 
 - [Windows](https://github.com/bonappetitabc/BonRaffle/tree/main/work/bonraffle_winui) — C# и WinUI 3.
 - [macOS](https://github.com/bonappetitabc/BonRaffle/tree/main/work/bonraffle_macos) — Swift и SwiftUI.
-- [Инструкции по сборке](BUILDING.md). Готовые `.exe` и `.dmg` доступны в [выпусках](https://github.com/bonappetitabc/BonRaffle/releases).
+
+Готовые `.exe` и `.dmg` доступны в [выпусках](https://github.com/bonappetitabc/BonRaffle/releases).
 
 В исходниках могут быть изменения, которые ещё не вошли в опубликованные установщики. Версию и работу каждой платформы проверяйте по соответствующему выпуску.
 
