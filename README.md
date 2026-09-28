@@ -54,6 +54,14 @@
 
 ![Настройки оформления Bon Raffle на macOS](docs/screenshots/settings-appearance-macos.png)
 
+**Обновления**
+
+Проверка обновлений в тестовой копии macOS.
+
+![Плашка доступной версии Bon Raffle на macOS](docs/screenshots/update-notice-macos.png)
+
+![Настройки и описание обновления Bon Raffle на macOS](docs/screenshots/settings-updates-macos.png)
+
 </details>
 
 ## Возможности
