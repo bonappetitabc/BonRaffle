@@ -97,7 +97,17 @@
                             <Border Width="108" Height="108" CornerRadius="54" HorizontalAlignment="Center" BorderBrush="#F5C978" BorderThickness="3" Padding="4" Background="#61351E">
                                 <Border CornerRadius="48" Background="#244060">
                                     <Grid>
-                                        <Image x:Name="WinnerAvatar" Stretch="UniformToFill" />
+                                        <Ellipse Fill="#244060" />
+                                        <Ellipse x:Name="WinnerAvatarSurface">
+                                            <Ellipse.Fill>
+                                                <ImageBrush ImageSource="{Binding Source, ElementName=WinnerAvatar}" Stretch="UniformToFill">
+                                                    <ImageBrush.RelativeTransform>
+                                                        <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1.08" ScaleY="1.08" />
+                                                    </ImageBrush.RelativeTransform>
+                                                </ImageBrush>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                        <Image x:Name="WinnerAvatar" Stretch="UniformToFill" Opacity="0" />
                                         <TextBlock x:Name="WinnerGiftIcon" Text="🎁" FontSize="60" TextAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
                                     </Grid>
                                 </Border>

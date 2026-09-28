@@ -252,8 +252,7 @@ public sealed partial class MainPage : Page
                         photoPath = photoUri.LocalPath;
                     photo.Source = !string.IsNullOrWhiteSpace(photoPath) && File.Exists(photoPath)
                         ? new BitmapImage(new Uri(photoPath)) : AvatarBitmap(PlaceholderSource);
-                    var photoFrame = new Border { Width = 42, Height = 42, CornerRadius = new CornerRadius(21),
-                        Child = photo, Background = new SolidColorBrush(ParseColor("#3A6A96")) };
+                    var photoFrame = RoundAvatarFrame(photo, 40);
                     var labels = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
                     labels.Children.Add(new TextBlock { Text = member.Name, FontSize = 15,
                         TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 280 });
@@ -403,7 +402,7 @@ public sealed partial class MainPage : Page
             };
             var photoRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 14 };
             photoRow.Children.Add(new Border { Width = 70, Height = 70, CornerRadius = new CornerRadius(35),
-                Background = new SolidColorBrush(ParseColor("#3A6A96")), Child = preview });
+                Background = new SolidColorBrush(ParseColor("#3A6A96")), Child = RoundAvatarFrame(preview, 60) });
             var photoButtons = new StackPanel { Spacing = 6 };
             photoButtons.Children.Add(choosePhoto); photoButtons.Children.Add(clearPhoto);
             photoRow.Children.Add(photoButtons);
@@ -666,7 +665,7 @@ public sealed partial class MainPage : Page
             var panel = new Grid { Height = 64, ColumnSpacing = 14 };
             panel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(42) });
             panel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            panel.Children.Add(image);
+            panel.Children.Add(RoundAvatarFrame(image, 40));
             panel.Children.Add(gift);
             Grid.SetColumn(name, 1);
             panel.Children.Add(name);
@@ -717,6 +716,21 @@ public sealed partial class MainPage : Page
         ? new Uri(RaffleData.AvatarPlaceholderPath).AbsoluteUri
         : "ms-appx:///Assets/AvatarPlaceholder.png";
 
+    private static Grid RoundAvatarFrame(Image image, double size)
+    {
+        var frame = new Grid { Width = size, Height = size, VerticalAlignment = VerticalAlignment.Center };
+        var brush = new ImageBrush { Stretch = Stretch.UniformToFill, ImageSource = image.Source,
+            RelativeTransform = new ScaleTransform { CenterX = 0.5, CenterY = 0.5, ScaleX = 1.08, ScaleY = 1.08 } };
+        var photo = new Microsoft.UI.Xaml.Shapes.Ellipse { Fill = brush };
+        frame.Children.Add(new Microsoft.UI.Xaml.Shapes.Ellipse { Fill = new SolidColorBrush(ParseColor("#244060")) });
+        frame.Children.Add(photo);
+        image.Opacity = 0;
+        frame.Children.Add(image);
+        image.RegisterPropertyChangedCallback(Image.SourceProperty, (_, _) => brush.ImageSource = image.Source);
+        image.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => photo.Visibility = image.Visibility);
+        return frame;
+    }
+
     private void SetAvatar(Image image, string? url)
     {
         var placeholder = PlaceholderSource;
@@ -749,6 +763,7 @@ public sealed partial class MainPage : Page
         var show = _prizeMode && fallback;
         gift.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         image.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+        if (image == WinnerAvatar) WinnerAvatarSurface.Visibility = image.Visibility;
     }
 
     private async Task SetAvatarAsync(Image image, string source)

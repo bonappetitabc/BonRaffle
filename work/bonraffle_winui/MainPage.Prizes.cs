@@ -74,8 +74,8 @@ public sealed partial class MainPage
                     if (path is null && Uri.TryCreate(prize.Image, UriKind.Absolute, out var uri) && uri.IsFile)
                         path = uri.LocalPath;
                     if (path is not null && File.Exists(path))
-                        row.Children.Add(new Image { Source = new BitmapImage(new Uri(path)), Width = 40, Height = 40,
-                            Stretch = Stretch.UniformToFill });
+                        row.Children.Add(RoundAvatarFrame(new Image { Source = new BitmapImage(new Uri(path)),
+                            Width = 40, Height = 40, Stretch = Stretch.UniformToFill }, 40));
                     else row.Children.Add(new TextBlock { Text = "🎁", FontSize = 27, Width = 40 });
                     var labels = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
                     labels.Children.Add(new TextBlock { Text = prize.Name, FontSize = 15, MaxWidth = 260,
@@ -220,7 +220,7 @@ public sealed partial class MainPage
             };
 
             var imageFrame = new Grid { Width = 70, Height = 70 };
-            imageFrame.Children.Add(previewFallback); imageFrame.Children.Add(preview);
+            imageFrame.Children.Add(RoundAvatarFrame(preview, 64)); imageFrame.Children.Add(previewFallback);
             var imageButtons = new StackPanel { Spacing = 6 };
             imageButtons.Children.Add(chooseImage); imageButtons.Children.Add(clearImage);
             var imageRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
