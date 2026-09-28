@@ -56,6 +56,7 @@ public sealed partial class MainPage : Page
 
     public MainPage()
     {
+        Current = this;
         InitializeComponent();
         InitializeCountdown();
         _avatarFiles.ActivityChanged += AvatarActivityChanged;
@@ -92,6 +93,7 @@ public sealed partial class MainPage : Page
             FocusPrimaryAction();
             if (_members.Count > 0) _avatarFiles.StartBatch(_members.Select(m => m.Avatar));
             if (_settings.Fullscreen) SetFullscreen(true);
+            _ = InitializeUpdatesAsync();
         }
         catch (Exception ex) { await ShowErrorAsync("Не удалось прочитать данные", ex); }
     }
@@ -604,6 +606,7 @@ public sealed partial class MainPage : Page
     {
         StopRendering();
         HomeView.Visibility = view == "home" ? Visibility.Visible : Visibility.Collapsed;
+        if (view == "home") _ = NotifyUpdateAsync();
         RaffleView.Visibility = view == "raffle" ? Visibility.Visible : Visibility.Collapsed;
         WinnerView.Visibility = view == "winner" ? Visibility.Visible : Visibility.Collapsed;
         _raffleActive = view == "raffle";
@@ -1580,6 +1583,7 @@ public sealed partial class MainPage : Page
             "Свои списки и картинки хранятся на этом компьютере в папке данных Bon Raffle. Токен MAX хранится в защищённом хранилище Windows. Исходный код распространяется по лицензии MIT.");
         aboutPanel.Children.Add(new TextBlock { Text = $"Версия: {version}\n© 2026 bonappetit.abc",
             TextWrapping = TextWrapping.Wrap, Opacity = 0.75 });
+        aboutPanel.Children.Add(BuildUpdatePanel());
         var dataInfo = new TextBlock
         {
             Text = $"Локально сохранено: {_members.Count:N0} участников\n{RaffleData.DirectoryPath}",

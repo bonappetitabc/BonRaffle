@@ -20,6 +20,9 @@
             </Grid>
             <ScrollViewer x:Name="HomeView" Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="680" Spacing="16" Padding="0,24,0,24">
+                    <InfoBar x:Name="UpdateNotice" IsOpen="False" IsClosable="True" Severity="Informational" Message="Доступно обновление приложения.">
+                        <InfoBar.ActionButton><Button Content="Посмотреть" Click="ShowUpdates_Click" /></InfoBar.ActionButton>
+                    </InfoBar>
                     <TextBlock Text="Проведите розыгрыш" FontSize="36" FontWeight="Bold" Foreground="White" TextAlignment="Center" TextWrapping="Wrap" />
                     <TextBlock x:Name="HomeSubtitle" Text="Попробуйте демонстрационный список или загрузите свой." Foreground="#D3E4D7" TextAlignment="Center" TextWrapping="Wrap" FontSize="16" />
                     <Border x:Name="HomeCard" Background="#99000000" CornerRadius="18" Padding="28" Margin="0,18,0,0">

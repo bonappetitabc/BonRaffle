@@ -14,6 +14,7 @@
 !/docs/screenshots/prize-winner-windows.png
 !/docs/screenshots/settings-general-windows.png
 !/docs/screenshots/settings-appearance-windows.png
+!/docs/screenshots/update-notice-windows.png
 !/docs/screenshots/home-participants-macos.png
 !/docs/screenshots/prize-winner-macos.png
 !/docs/screenshots/settings-general-macos.png
@@ -30,6 +31,7 @@
 !/work/bonraffle_winui/*.manifest
 !/work/bonraffle_winui/*.appxmanifest
 !/work/bonraffle_winui/LICENSE.txt
+!/work/bonraffle_winui/ThirdPartyNotices.txt
 !/work/bonraffle_winui/Assets/
 /work/bonraffle_winui/Assets/*
 !/work/bonraffle_winui/Assets/LockScreenLogo.scale-200.png
