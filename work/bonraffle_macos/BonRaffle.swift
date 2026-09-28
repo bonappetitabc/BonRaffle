@@ -1487,6 +1487,22 @@ private struct AvatarStatusView: View {
     }
 }
 
+private struct CircularAvatarImage: View {
+    let image: NSImage
+    let size: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle().fill(Color(red: 0.14, green: 0.25, blue: 0.38))
+            Image(nsImage: image).resizable().scaledToFill()
+                .frame(width: size, height: size)
+                .scaleEffect(1.08)
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+    }
+}
+
 private struct AvatarView: View {
     @ObservedObject var cache: AvatarCache
     let member: Member
@@ -1496,9 +1512,10 @@ private struct AvatarView: View {
     let isPrize: Bool
 
     var body: some View {
-        Group {
+        ZStack {
+            Circle().fill(Color(red: 0.14, green: 0.25, blue: 0.38))
             if showRemote, let image = cache.images[member.av] {
-                Image(nsImage: image).resizable().scaledToFill()
+                CircularAvatarImage(image: image, size: size)
             } else { placeholder }
         }
         .frame(width: size, height: size)
@@ -1517,7 +1534,7 @@ private struct AvatarView: View {
                     .foregroundStyle(gold)
                     .background(Color(red: 0.12, green: 0.22, blue: 0.33))
             } else if let image = fallback {
-                Image(nsImage: image).resizable().scaledToFill()
+                CircularAvatarImage(image: image, size: size)
             } else { Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(gold) }
         }
     }
@@ -1895,8 +1912,7 @@ private struct ManualListView: View {
                 .textFieldStyle(.roundedBorder)
             HStack(spacing: 12) {
                 if let image = previewImage {
-                    Image(nsImage: image).resizable().scaledToFill()
-                        .frame(width: 64, height: 64).clipShape(Circle())
+                    CircularAvatarImage(image: image, size: 64)
                 } else {
                     Image(systemName: "person.crop.circle.fill")
                         .font(.system(size: 54)).foregroundStyle(gold)
@@ -1944,8 +1960,7 @@ private struct ManualListView: View {
                 List(entries) { entry in
                     HStack(spacing: 10) {
                         if let image = rowImage(entry.av) {
-                            Image(nsImage: image).resizable().scaledToFill()
-                                .frame(width: 38, height: 38).clipShape(Circle())
+                            CircularAvatarImage(image: image, size: 38)
                         } else {
                             Image(systemName: "person.crop.circle.fill").font(.system(size: 34))
                         }
@@ -2190,8 +2205,7 @@ private struct PrizeRaffleView: View {
             Stepper("Вес шанса: \(weight)", value: $weight, in: 1...1_000)
             HStack(spacing: 12) {
                 if let photo = prizeImage(image) {
-                    Image(nsImage: photo).resizable().scaledToFill()
-                        .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 12))
+                    CircularAvatarImage(image: photo, size: 64)
                 } else {
                     Image(systemName: "gift.fill")
                         .font(.system(size: 38)).foregroundStyle(gold)
@@ -2238,9 +2252,7 @@ private struct PrizeRaffleView: View {
                         ForEach(entries) { prize in
                             HStack(spacing: 10) {
                                 if let photo = prizeImage(prize.image) {
-                                    Image(nsImage: photo).resizable().scaledToFill()
-                                        .frame(width: 44, height: 44)
-                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    CircularAvatarImage(image: photo, size: 44)
                                 } else {
                                     Image(systemName: "gift.fill")
                                         .font(.system(size: 25)).foregroundStyle(gold)
@@ -2460,8 +2472,7 @@ private struct SettingsView: View {
             Section("Аватар без фото") {
                 HStack(spacing: 12) {
                     if let image = model.avatarPlaceholder {
-                        Image(nsImage: image).resizable().scaledToFill()
-                            .frame(width: 44, height: 44).clipShape(Circle())
+                        CircularAvatarImage(image: image, size: 44)
                     }
                     Text("Эта картинка показывается, если у участника нет аватара.")
                         .font(.caption).foregroundStyle(.secondary)
