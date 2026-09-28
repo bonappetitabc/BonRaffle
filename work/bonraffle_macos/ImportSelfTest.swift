@@ -50,5 +50,26 @@ struct ImportSelfTest {
         print("Проверка ограничения импорта форматом CSV: OK")
         print("Проверка исключения победителей: OK")
         print("Проверка сохранения сброса фона, логотипа и аватара: OK")
+        let releaseJSON = """
+        [{"tag_name":"windows-v9.0.0","draft":false,"prerelease":false,"assets":[]},
+         {"tag_name":"macos-v2.3.0","draft":false,"prerelease":false,"body":"Changes","assets":[
+           {"name":"BonRaffle-macOS15-plus-2.3.0.dmg","size":3,"digest":"sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+            "browser_download_url":"https://github.com/bonappetitabc/BonRaffle/releases/download/macos-v2.3.0/BonRaffle-macOS15-plus-2.3.0.dmg"}]}]
+        """
+        let releases = try JSONDecoder().decode([AppUpdateClient.GitHubRelease].self, from: Data(releaseJSON.utf8))
+        guard AppUpdateClient.candidate(releases[0]) == nil,
+              let update = AppUpdateClient.candidate(releases[1]), update.version == "2.3.0",
+              UpdateVersion("2.10.0")! > UpdateVersion("2.9.0")!, UpdateVersion("2.3.0-beta") == nil else {
+            throw AppUpdateError.unavailable
+        }
+        let updateFile = testFolder.appendingPathComponent("update.dmg")
+        try Data("abc".utf8).write(to: updateFile)
+        try AppUpdateClient.verify(updateFile, release: update)
+        try Data("abd".utf8).write(to: updateFile)
+        rejected = false
+        do { try AppUpdateClient.verify(updateFile, release: update) }
+        catch { rejected = true }
+        guard rejected else { throw AppUpdateError.invalidFile }
+        print("Проверка платформы, версии и SHA-256 обновления: OK")
     }
 }

@@ -352,9 +352,10 @@ struct RaffleAppearance: Codable {
 
 @MainActor
 final class RaffleModel: ObservableObject {
+    let updates = AppUpdater()
     let avatarCache = AvatarCache()
     weak var mainWindow: NSWindow?
-    enum Screen { case home, raffle, winner }
+    enum Screen: Equatable { case home, raffle, winner }
     enum Modal: String, Identifiable, Equatable {
         case settings, help, avatarStatus, manualList, prizes
         var id: String { rawValue }
@@ -393,7 +394,9 @@ final class RaffleModel: ObservableObject {
     @Published var background: NSImage?
     @Published var logo: NSImage?
     @Published var avatarPlaceholder: NSImage?
-    @Published var screen: Screen = .home
+    @Published var screen: Screen = .home {
+        didSet { if screen == .home { Task { await updates.notifyIfNeeded() } } }
+    }
     @Published var modal: Modal?
     @Published var status = "Выберите файл со списком"
     @Published var importing = false
@@ -465,6 +468,7 @@ final class RaffleModel: ObservableObject {
             }
         }
         if !members.isEmpty { avatarCache.startBatch(members.map(\.av)) }
+        updates.canNotify = { [weak self] in self?.screen == .home }
     }
 
     private static func prizeMembers(_ prizes: [Prize]) -> [Member] {
@@ -953,6 +957,7 @@ struct BonRaffleApp: App {
     @Environment(\.openWindow) private var openWindow
 
     init() {
+        #if !BON_RAFFLE_UPDATE_TEST
         let defaults = UserDefaults.standard
         let oldID = "ru.fan-fable.bonraffle"
         let currentID = "com.bonraffle.app"
@@ -964,12 +969,16 @@ struct BonRaffleApp: App {
             defaults.setPersistentDomain(currentValues, forName: currentID)
         }
         defaults.removePersistentDomain(forName: oldID)
+        #endif
     }
 
     var body: some Scene {
         WindowGroup("Bon Raffle") {
             MainView(model: model)
                 .frame(minWidth: 720, minHeight: 620)
+                .onReceive(NotificationCenter.default.publisher(for: .bonRaffleUpdateRequested)) { _ in
+                    openWindow(id: "updates")
+                }
         }
         .defaultSize(width: 1080, height: 760)
         .commands {
@@ -977,6 +986,9 @@ struct BonRaffleApp: App {
             CommandGroup(replacing: .appSettings) {
                 Button("Настройки…") { openWindow(id: "settings") }
                     .keyboardShortcut(",", modifiers: .command)
+            }
+            CommandGroup(after: .appInfo) {
+                Button("Проверить обновления…") { openWindow(id: "updates"); model.updates.check() }
             }
             CommandGroup(after: .sidebar) {
                 Button("Главная") { model.screen = .home }
@@ -1001,6 +1013,11 @@ struct BonRaffleApp: App {
                 .frame(minWidth: 820, minHeight: 600)
         }
         .defaultSize(width: 1060, height: 780)
+        Window("Обновления — Bon Raffle", id: "updates") {
+            ScrollView { AppUpdateView(updater: model.updates).padding(24) }
+                .frame(minWidth: 600, minHeight: 420)
+        }
+        .defaultSize(width: 700, height: 520)
     }
 }
 
@@ -1092,7 +1109,7 @@ private struct MainView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .onAppear { countdownRemaining = Double(configuredCountdown) }
+        .onAppear { countdownRemaining = Double(configuredCountdown); model.updates.automaticCheck() }
         .onChange(of: model.settings.countdownSeconds) { _, _ in
             countdownDeadline = nil
             countdownRemaining = Double(configuredCountdown)
@@ -1149,6 +1166,7 @@ private struct MainView: View {
     private var home: some View {
         ScrollView {
             VStack(spacing: 20) {
+                AppUpdateNotice(updater: model.updates)
                 Text("Проведите розыгрыш").font(.system(size: 38, weight: .bold, design: .rounded))
                 Text(model.prizeMode
                      ? "Выберите список призов. Вес задаёт шанс, а количество уменьшается после каждого выигрыша."
@@ -2607,6 +2625,7 @@ private struct SettingsView: View {
                     Text("Версия: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")")
                     Text("© 2026 bonappetit.abc")
                 }
+                Section("Обновления") { AppUpdateView(updater: model.updates) }
             }
             }
             .formStyle(.grouped)

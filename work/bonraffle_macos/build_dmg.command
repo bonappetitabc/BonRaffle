@@ -3,6 +3,13 @@ set -euo pipefail
 
 cd "${0:A:h}"
 ROOT="$PWD"
+TEST_UPDATES=0
+if [[ "${1:-}" == "--test-updates" ]]; then
+  TEST_UPDATES=1
+elif (( $# > 0 )); then
+  print -u2 "Параметр: --test-updates для отдельной тестовой копии обновлений."
+  exit 1
+fi
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   print -u2 "Запусти эту команду на Mac."
@@ -20,6 +27,10 @@ OS_VERSION="$(sw_vers -productVersion)"
 OS_MAJOR="${OS_VERSION%%.*}"
 print "macOS ${OS_VERSION}; SDK macOS ${SDK_VERSION}."
 SWIFT_FLAGS=(-D BON_RAFFLE_NATIVE)
+if (( TEST_UPDATES )); then
+  SWIFT_FLAGS+=(-D BON_RAFFLE_UPDATE_TEST)
+  print "Тест обновлений: отдельное приложение и данные; версия сравнения 2.2.0."
+fi
 if (( SDK_MAJOR >= 26 )); then
   SWIFT_FLAGS+=(-D HAS_LIQUID_GLASS)
   print "SDK macOS ${SDK_VERSION}: поддержка Liquid Glass добавлена. Эффект работает на macOS 26 и новее."
@@ -31,24 +42,28 @@ else
 fi
 BUILD="$ROOT/.build-native"
 APP="$ROOT/Bon Raffle.app"
+if (( TEST_UPDATES )); then
+  BUILD="$ROOT/.build-update-test"
+  APP="$ROOT/Bon Raffle Update Test.app"
+fi
 mkdir -p "$BUILD" "$APP/Contents/MacOS" "$APP/Contents/Resources"
 export MACOSX_DEPLOYMENT_TARGET=15.0
 
 print "[1/6] Проверка Swift и загрузки CSV..."
 xcrun swiftc -frontend -parse "${SWIFT_FLAGS[@]}" \
-  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/BonRaffle.swift"
-xcrun swiftc -O -sdk "$SDK" "$ROOT/RaffleData.swift" "$ROOT/ImportSelfTest.swift" \
+  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/BonRaffle.swift"
+xcrun swiftc -O -sdk "$SDK" "$ROOT/RaffleData.swift" "$ROOT/AppUpdates.swift" "$ROOT/ImportSelfTest.swift" \
   -o "$BUILD/import-selftest"
 "$BUILD/import-selftest"
 
 print "[2/6] Сборка для Apple Silicon..."
 xcrun swiftc -O -sdk "$SDK" "${SWIFT_FLAGS[@]}" -target arm64-apple-macosx15.0 \
-  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/BonRaffle.swift" \
+  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/BonRaffle.swift" \
   -o "$BUILD/BonRaffle-arm64"
 
 print "[3/6] Сборка для Intel..."
 xcrun swiftc -O -sdk "$SDK" "${SWIFT_FLAGS[@]}" -target x86_64-apple-macosx15.0 \
-  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/BonRaffle.swift" \
+  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/BonRaffle.swift" \
   -o "$BUILD/BonRaffle-x86_64"
 
 print "[4/6] Создание универсального приложения..."
@@ -56,6 +71,12 @@ lipo -create "$BUILD/BonRaffle-arm64" "$BUILD/BonRaffle-x86_64" \
   -output "$APP/Contents/MacOS/BonRaffle"
 chmod +x "$APP/Contents/MacOS/BonRaffle"
 ditto "$ROOT/Info.plist" "$APP/Contents/Info.plist"
+if (( TEST_UPDATES )); then
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.bonraffle.updatetest' "$APP/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Bon Raffle Update Test' "$APP/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleName Bon Raffle Update Test' "$APP/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 2.2.0' "$APP/Contents/Info.plist"
+fi
 ditto "$ROOT/Resources/background-bon-raffle.png" "$APP/Contents/Resources/background-bon-raffle.png"
 ditto "$ROOT/Resources/logo-bon-raffle.png" "$APP/Contents/Resources/logo-bon-raffle.png"
 ditto "$ROOT/Resources/avatar-placeholder.png" "$APP/Contents/Resources/avatar-placeholder.png"
@@ -87,11 +108,14 @@ STAGING_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/bonraffle-dmg.XXXXXX")"
 STAGING="$STAGING_ROOT/Bon Raffle"
 mkdir -p "$STAGING"
 trap 'rm -rf -- "$STAGING_ROOT"' EXIT
-ditto "$APP" "$STAGING/Bon Raffle.app"
+ditto "$APP" "$STAGING/${APP:t}"
 ln -s /Applications "$STAGING/Applications"
 
 print "[6/6] Создание DMG..."
-DMG="$ROOT/BonRaffle-macOS15-plus-2.2.30.dmg"
+DMG="$ROOT/BonRaffle-macOS15-plus-2.3.0.dmg"
+if (( TEST_UPDATES )); then
+  DMG="$ROOT/BonRaffle-macOS-update-test.dmg"
+fi
 TEMP_DMG="$STAGING_ROOT/BonRaffle.dmg"
 diskutil image create from --format UDZO "$STAGING" "$TEMP_DMG"
 diskutil image info "$TEMP_DMG" >/dev/null

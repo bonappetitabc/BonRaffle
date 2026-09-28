@@ -2,7 +2,11 @@ import Foundation
 import Security
 
 enum MaxConnection {
+    #if BON_RAFFLE_UPDATE_TEST
+    private static let service = "com.bonraffle.updatetest.max"
+    #else
     private static let service = "com.bonraffle.app.max"
+    #endif
     private static let account = "bot-token"
 
     static func loadToken() -> String? {
