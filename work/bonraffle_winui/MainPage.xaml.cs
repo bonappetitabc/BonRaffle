@@ -555,11 +555,6 @@ public sealed partial class MainPage : Page
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Application.Current.Exit();
 
-    private void ActionButton_PointerEntered(object sender, PointerRoutedEventArgs e) => AnimateActionButton(sender, 1.025);
-    private void ActionButton_PointerExited(object sender, PointerRoutedEventArgs e) => AnimateActionButton(sender, 1);
-    private void ActionButton_PointerPressed(object sender, PointerRoutedEventArgs e) => AnimateActionButton(sender, 0.975);
-    private void ActionButton_PointerReleased(object sender, PointerRoutedEventArgs e) => AnimateActionButton(sender, 1.025);
-
     private void ApplyPrimaryButtonColors(Color color)
     {
         var border = Color.FromArgb(255,
@@ -587,31 +582,6 @@ public sealed partial class MainPage : Page
     {
         if (button.Resources.TryGetValue(key, out var resource) && resource is SolidColorBrush brush)
             brush.Color = color;
-    }
-
-    private void AnimateActionButton(object sender, double target)
-    {
-        if (_settings.ReduceEffects || sender is not Button button) return;
-        button.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
-        if (button.RenderTransform is not ScaleTransform scale)
-            button.RenderTransform = scale = new ScaleTransform { ScaleX = 1, ScaleY = 1 };
-        var from = scale.ScaleX;
-        scale.ScaleX = target;
-        scale.ScaleY = target;
-        var storyboard = new Storyboard();
-        foreach (var property in new[] { "ScaleX", "ScaleY" })
-        {
-            var animation = new DoubleAnimation
-            {
-                From = from, To = target, Duration = new Duration(TimeSpan.FromMilliseconds(140)),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-                FillBehavior = FillBehavior.Stop
-            };
-            Storyboard.SetTarget(animation, scale);
-            Storyboard.SetTargetProperty(animation, property);
-            storyboard.Children.Add(animation);
-        }
-        storyboard.Begin();
     }
 
     private void OpenRaffle_Click(object sender, RoutedEventArgs e)
