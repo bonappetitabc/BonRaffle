@@ -24,8 +24,8 @@
     <Product>Bon Raffle</Product>
     <AssemblyTitle>Bon Raffle</AssemblyTitle>
     <Description>Bon Raffle — проведение розыгрышей</Description>
-    <Copyright>© 2026 bonappetit.abc</Copyright>
-    <Version>2.3.0</Version>
+    <Copyright>© 2026 Bon Raffle · Автор: bonappetit.abc</Copyright>
+    <Version>2.3.1</Version>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>

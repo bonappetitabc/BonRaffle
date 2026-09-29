@@ -58,6 +58,7 @@ public sealed partial class MainPage : Page
     {
         Current = this;
         InitializeComponent();
+        ApplyPrimaryButtonColors(ParseColor("#D2691E"));
         InitializeCountdown();
         _avatarFiles.ActivityChanged += AvatarActivityChanged;
         _avatarProgressTimer.Tick += (_, _) => TickAvatarProgress();
@@ -558,6 +559,35 @@ public sealed partial class MainPage : Page
     private void ActionButton_PointerExited(object sender, PointerRoutedEventArgs e) => AnimateActionButton(sender, 1);
     private void ActionButton_PointerPressed(object sender, PointerRoutedEventArgs e) => AnimateActionButton(sender, 0.975);
     private void ActionButton_PointerReleased(object sender, PointerRoutedEventArgs e) => AnimateActionButton(sender, 1.025);
+
+    private void ApplyPrimaryButtonColors(Color color)
+    {
+        var border = Color.FromArgb(255,
+            (byte)Math.Min(color.R + 28, 255),
+            (byte)Math.Min(color.G + 28, 255),
+            (byte)Math.Min(color.B + 28, 255));
+        var pressed = Color.FromArgb(255,
+            (byte)(color.R * 0.88),
+            (byte)(color.G * 0.88),
+            (byte)(color.B * 0.88));
+        foreach (var button in new[] { OpenRaffleButton, SpinButton, AgainButton })
+        {
+            button.Background = new SolidColorBrush(color);
+            button.BorderBrush = new SolidColorBrush(border);
+            SetButtonStateColor(button, "ButtonBackgroundPointerOver", color);
+            SetButtonStateColor(button, "ButtonBackgroundPressed", pressed);
+            SetButtonStateColor(button, "ButtonBorderBrushPointerOver", border);
+            SetButtonStateColor(button, "ButtonBorderBrushPressed", border);
+            SetButtonStateColor(button, "ButtonForegroundPointerOver", Colors.White);
+            SetButtonStateColor(button, "ButtonForegroundPressed", Colors.White);
+        }
+    }
+
+    private static void SetButtonStateColor(Button button, string key, Color color)
+    {
+        if (button.Resources.TryGetValue(key, out var resource) && resource is SolidColorBrush brush)
+            brush.Color = color;
+    }
 
     private void AnimateActionButton(object sender, double target)
     {
@@ -1421,10 +1451,10 @@ public sealed partial class MainPage : Page
         var photo = new ToggleSwitch { Header = "Показывать фоновое фото", IsOn = _settings.UseBackgroundPhoto };
         var confirmReplace = new ToggleSwitch { Header = "Подтверждать замену списка", IsOn = _settings.ConfirmReplace };
         var effects = new ToggleSwitch { Header = "Уменьшить эффекты", IsOn = _settings.ReduceEffects };
-        var duration = new ComboBox { Header = "Длительность розыгрыша", HorizontalAlignment = HorizontalAlignment.Stretch };
+        var duration = new ComboBox { Header = "Длительность розыгрыша", Width = 280, HorizontalAlignment = HorizontalAlignment.Left };
         duration.Items.Add("8 секунд"); duration.Items.Add("12 секунд"); duration.Items.Add("20 секунд");
         duration.SelectedIndex = _settings.SpinSeconds == 8 ? 0 : _settings.SpinSeconds == 12 ? 1 : 2;
-        var fps = new ComboBox { Header = "Частота анимации", HorizontalAlignment = HorizontalAlignment.Stretch };
+        var fps = new ComboBox { Header = "Частота анимации", Width = 320, HorizontalAlignment = HorizontalAlignment.Left };
         fps.Items.Add("Авто — частота экрана"); fps.Items.Add("30 кадров/с"); fps.Items.Add("60 кадров/с");
         fps.Items.Add("120 кадров/с"); fps.Items.Add("144 кадра/с");
         fps.SelectedIndex = _settings.AnimationFps switch { 30 => 1, 60 => 2, 120 => 3, 144 => 4, _ => 0 };
@@ -1438,20 +1468,24 @@ public sealed partial class MainPage : Page
         resetHomeCardButton.Click += (_, _) => { homeCardColor.Color = ParseColor("#000000"); homeCardTransparency.Value = 40; };
         var showRemaining = new ToggleSwitch { Header = "Показывать число участников над барабаном", IsOn = _settings.ShowRemainingHeader };
         var participantsCaption = new TextBox { Header = "Подпись над барабаном · участники", Text = _settings.ParticipantsCaption,
-            MaxLength = 200, TextWrapping = TextWrapping.Wrap, AcceptsReturn = false };
+            MaxLength = 200, Width = 620, HorizontalAlignment = HorizontalAlignment.Left,
+            TextWrapping = TextWrapping.Wrap, AcceptsReturn = false };
         var prizesCaption = new TextBox { Header = "Подпись над барабаном · призы", Text = _settings.PrizesCaption,
-            MaxLength = 200, TextWrapping = TextWrapping.Wrap, AcceptsReturn = false };
+            MaxLength = 200, Width = 620, HorizontalAlignment = HorizontalAlignment.Left,
+            TextWrapping = TextWrapping.Wrap, AcceptsReturn = false };
         var showCountdown = new ToggleSwitch { Header = "Показывать таймер над барабаном", IsOn = _settings.ShowCountdown };
         var countdownMinutes = new NumberBox { Header = "Длительность таймера, минуты", Minimum = 1, Maximum = 1440,
             SmallChange = 1, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
-            Value = Math.Max(1, _settings.CountdownSeconds / 60) };
+            Value = Math.Max(1, _settings.CountdownSeconds / 60), Width = 180,
+            HorizontalAlignment = HorizontalAlignment.Left };
         var countdownCaption = new TextBox { Header = "Текст над таймером", Text = _settings.CountdownCaption,
-            MaxLength = 200, TextWrapping = TextWrapping.Wrap, AcceptsReturn = false };
+            MaxLength = 200, Width = 620, HorizontalAlignment = HorizontalAlignment.Left,
+            TextWrapping = TextWrapping.Wrap, AcceptsReturn = false };
         var countdownRingColor = new ColorPicker { Color = ParseColor(_settings.CountdownRingColor), IsAlphaEnabled = false,
             ColorSpectrumComponents = ColorSpectrumComponents.SaturationValue };
         var countdownHint = new TextBlock { Text = "Подпись — до 200 символов. Нажмите на круг над барабаном, чтобы запустить или приостановить отсчёт. При нуле таймер сразу скроется и выключится.",
             TextWrapping = TextWrapping.Wrap, Opacity = 0.8 };
-        var winnerEffect = new ComboBox { Header = "Анимация победы", HorizontalAlignment = HorizontalAlignment.Stretch };
+        var winnerEffect = new ComboBox { Header = "Анимация победы", Width = 360, HorizontalAlignment = HorizontalAlignment.Left };
         winnerEffect.Items.Add("Шарики"); winnerEffect.Items.Add("Конфетти-салют");
         winnerEffect.Items.Add("Звёздный дождь"); winnerEffect.Items.Add("Случайный при каждой победе");
         winnerEffect.SelectedIndex = _settings.WinnerEffect switch { "stars" => 1, "sparks" => 2, "random" => 3, _ => 0 };
@@ -1459,8 +1493,10 @@ public sealed partial class MainPage : Page
         var previewButton = new Button { Content = "Показать пример" };
         var effectPreviewRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         effectPreviewRow.Children.Add(effectPreview);
-        previewButton.VerticalAlignment = VerticalAlignment.Center;
-        effectPreviewRow.Children.Add(previewButton);
+        var effectControls = new StackPanel { Spacing = 12, VerticalAlignment = VerticalAlignment.Center };
+        effectControls.Children.Add(winnerEffect);
+        effectControls.Children.Add(previewButton);
+        effectPreviewRow.Children.Add(effectControls);
         previewButton.Click += (_, _) =>
         {
             var kind = winnerEffect.SelectedIndex switch { 1 => "stars", 2 => "sparks", 3 => new[] { "balloons", "stars", "sparks" }[Random.Shared.Next(3)], _ => "balloons" };
@@ -1503,7 +1539,7 @@ public sealed partial class MainPage : Page
             };
             return new Button
             {
-                Content = content, HorizontalAlignment = HorizontalAlignment.Stretch,
+                Content = content, Width = 520, HorizontalAlignment = HorizontalAlignment.Left,
                 HorizontalContentAlignment = HorizontalAlignment.Left, MinHeight = 44,
                 Flyout = new Flyout { Content = picker }
             };
@@ -1596,7 +1632,7 @@ public sealed partial class MainPage : Page
             "Включены четыре изменяемых примера: участники, столики и два набора призов. Их можно открыть, изменить или удалить как обычные списки.");
         AboutSection("Данные и лицензия",
             "Свои списки и картинки хранятся на этом компьютере в папке данных Bon Raffle. Токен MAX хранится в защищённом хранилище Windows. Исходный код распространяется по лицензии MIT.");
-        aboutPanel.Children.Add(new TextBlock { Text = $"Версия: {version}\n© 2026 bonappetit.abc",
+        aboutPanel.Children.Add(new TextBlock { Text = $"Версия: {version}\nАвтор: bonappetit.abc\n© 2026 Bon Raffle",
             TextWrapping = TextWrapping.Wrap, Opacity = 0.75 });
         aboutPanel.Children.Add(BuildUpdatePanel());
         var dataInfo = new TextBlock
@@ -1679,7 +1715,7 @@ public sealed partial class MainPage : Page
         rafflePanel.Children.Add(countdownCaption);
         rafflePanel.Children.Add(ColorSettingButton("Цвет кольца таймера", countdownRingColor));
         rafflePanel.Children.Add(countdownHint);
-        rafflePanel.Children.Add(winnerEffect); rafflePanel.Children.Add(effectPreviewRow);
+        rafflePanel.Children.Add(effectPreviewRow);
         var appearancePanel = new StackPanel { Spacing = 14 };
         appearancePanel.Children.Add(backgroundStatus); appearancePanel.Children.Add(pickBackgroundButton);
         appearancePanel.Children.Add(resetBackgroundButton);
@@ -1699,10 +1735,13 @@ public sealed partial class MainPage : Page
         appearancePanel.Children.Add(ColorSettingButton("Цвет рамки карточки победителя", winnerCardBorderColor));
         appearancePanel.Children.Add(ColorSettingButton("Цвет основных кнопок", primaryButtonColor));
         var dataPanel = new StackPanel { Spacing = 14 };
-        var maxChatId = new TextBox { Header = "chat_id канала или группы MAX", Text = _settings.MaxChatId, PlaceholderText = "Пример: -123456789 (не настоящий ID)" };
-        var maxToken = new PasswordBox { Header = "Токен бота MAX", PlaceholderText = "Пример: сюда вставьте токен бота MAX" };
+        var maxChatId = new TextBox { Header = "chat_id канала или группы MAX", Text = _settings.MaxChatId,
+            PlaceholderText = "Пример: -123456789 (не настоящий ID)", Width = 620,
+            HorizontalAlignment = HorizontalAlignment.Left };
+        var maxToken = new PasswordBox { Header = "Токен бота MAX", PlaceholderText = "Пример: сюда вставьте токен бота MAX",
+            Width = 620, HorizontalAlignment = HorizontalAlignment.Left };
         var maxApiHost = new TextBox { Header = "Адрес API MAX", Text = _settings.MaxApiHost,
-            PlaceholderText = "platform-api.max.ru" };
+            PlaceholderText = "platform-api.max.ru", Width = 620, HorizontalAlignment = HorizontalAlignment.Left };
         var maxApiHostStatus = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.75,
             Text = "По умолчанию — platform-api.max.ru. При необходимости измените адрес здесь. MAX рекомендует добавить сертификат Минцифры в доверенные. Токен отправляется выбранному серверу max.ru." };
         var maxGuide = new StackPanel { Spacing = 10 };
@@ -1919,6 +1958,7 @@ public sealed partial class MainPage : Page
         var result = await completion.Task;
         if (result || pickLogoRequested || pickBackgroundRequested || pickAvatarPlaceholderRequested)
         {
+            var wasFullscreen = _settings.Fullscreen;
             _settings.Fullscreen = fullscreen.IsOn;
             _settings.LaunchPreferenceConfigured = true;
             _settings.ShowAvatars = avatars.IsOn;
@@ -1972,8 +2012,9 @@ public sealed partial class MainPage : Page
                     File.Delete(RaffleData.AvatarPlaceholderPath);
                 _settings.Validate();
                 await RaffleData.SaveSettingsAsync(_settings);
-                ApplySettings();
-                SetFullscreen(_settings.Fullscreen);
+                ApplySettings(refreshBackground: pickBackgroundRequested || resetBackground,
+                    refreshLogo: pickLogoRequested || resetLogo);
+                if (wasFullscreen != _settings.Fullscreen) SetFullscreen(_settings.Fullscreen);
                 RefreshVisibleAvatars();
             }
             catch (Exception ex) { await ShowErrorAsync("Не удалось сохранить настройки", ex); }
@@ -2036,7 +2077,7 @@ public sealed partial class MainPage : Page
             File.Copy(file.Path, destination, true);
     }
 
-    private void ApplySettings()
+    private void ApplySettings(bool refreshBackground = true, bool refreshLogo = true)
     {
         var alpha = (byte)Math.Clamp(_settings.BackgroundDim * 255 / 100, 0, 255);
         BackgroundShade.Background = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
@@ -2054,25 +2095,19 @@ public sealed partial class MainPage : Page
         SelectionFrame.BorderBrush = new SolidColorBrush(selectedColor);
         WinnerCard.Background = new SolidColorBrush(ParseColor(_settings.WinnerCardColor));
         WinnerCard.BorderBrush = new SolidColorBrush(ParseColor(_settings.WinnerCardBorderColor));
-        var buttonColor = ParseColor(_settings.PrimaryButtonColor);
-        var buttonBrush = new SolidColorBrush(buttonColor);
-        var buttonBorder = new SolidColorBrush(Color.FromArgb(255,
-            (byte)Math.Min(buttonColor.R + 28, 255),
-            (byte)Math.Min(buttonColor.G + 28, 255),
-            (byte)Math.Min(buttonColor.B + 28, 255)));
-        foreach (var button in new[] { OpenRaffleButton, SpinButton, AgainButton })
-        {
-            button.Background = buttonBrush;
-            button.BorderBrush = buttonBorder;
-        }
+        ApplyPrimaryButtonColors(ParseColor(_settings.PrimaryButtonColor));
         var path = RaffleData.BackgroundPath;
         BackgroundImage.Visibility = _settings.UseBackgroundPhoto ? Visibility.Visible : Visibility.Collapsed;
-        BackgroundImage.Source = File.Exists(path) && _settings.BackgroundFormat is not null
-            ? new BitmapImage(new Uri(path)) : new BitmapImage(new Uri("ms-appx:///Assets/background-bon-raffle.png"));
-        HeaderLogo.Source = File.Exists(RaffleData.LogoPath)
-            ? new BitmapImage(new Uri(RaffleData.LogoPath))
-            : new BitmapImage(new Uri("ms-appx:///Assets/logo-bon-raffle.png"));
-        if (_settings.UseBackgroundPhoto && !_settings.ReduceEffects) FadeIn(BackgroundImage);
+        if (refreshBackground)
+        {
+            BackgroundImage.Source = File.Exists(path) && _settings.BackgroundFormat is not null
+                ? new BitmapImage(new Uri(path)) : new BitmapImage(new Uri("ms-appx:///Assets/background-bon-raffle.png"));
+            if (_settings.UseBackgroundPhoto && !_settings.ReduceEffects) FadeIn(BackgroundImage);
+        }
+        if (refreshLogo)
+            HeaderLogo.Source = File.Exists(RaffleData.LogoPath)
+                ? new BitmapImage(new Uri(RaffleData.LogoPath))
+                : new BitmapImage(new Uri("ms-appx:///Assets/logo-bon-raffle.png"));
         if (_slotBorders.Count > 0) HighlightCenter();
         if (_raffleActive && !_spinning) { StopRendering(); StartRendering(); }
     }

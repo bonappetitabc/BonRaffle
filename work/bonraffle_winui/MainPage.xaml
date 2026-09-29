@@ -34,11 +34,20 @@
                             <TextBlock x:Name="MemberCount" Text="0 участников" FontSize="32" FontWeight="Bold" Foreground="White" TextAlignment="Center" />
                             <TextBlock x:Name="FileStatus" Text="Выберите файл со списком" Foreground="#BED5C5" TextAlignment="Center" TextWrapping="Wrap" />
                             <ProgressRing x:Name="ImportProgress" IsActive="False" Visibility="Collapsed" Width="32" Height="32" HorizontalAlignment="Center" />
-                            <Button x:Name="ImportButton" Content="Загрузить участников" Click="Import_Click" HorizontalAlignment="Stretch" MinHeight="46" />
-                            <Button x:Name="ManualListButton" Content="Создать свой список" Click="ManualList_Click" HorizontalAlignment="Stretch" MinHeight="42" />
-                            <Button x:Name="PrizeListButton" Content="Создать или изменить призы" Click="PrizeRaffle_Click" HorizontalAlignment="Stretch" MinHeight="42" />
-                            <Button x:Name="MaxExportButton" Content="Выгрузить участников из MAX" Click="MaxExport_Click" HorizontalAlignment="Stretch" MinHeight="42" />
-                            <Button x:Name="OpenRaffleButton" Content="Открыть розыгрыш" Click="OpenRaffle_Click" UseSystemFocusVisuals="False" HorizontalAlignment="Stretch" MinHeight="46" IsEnabled="False" Background="#D2691E" Foreground="White" BorderBrush="#EC9A5C" PointerEntered="ActionButton_PointerEntered" PointerExited="ActionButton_PointerExited" PointerPressed="ActionButton_PointerPressed" PointerReleased="ActionButton_PointerReleased" />
+                            <Button x:Name="ImportButton" Content="Загрузить участников" Click="Import_Click" HorizontalAlignment="Center" MinWidth="220" MinHeight="46" />
+                            <Button x:Name="ManualListButton" Content="Создать свой список" Click="ManualList_Click" HorizontalAlignment="Center" MinWidth="220" MinHeight="42" />
+                            <Button x:Name="PrizeListButton" Content="Создать или изменить призы" Click="PrizeRaffle_Click" HorizontalAlignment="Center" MinWidth="220" MinHeight="42" />
+                            <Button x:Name="MaxExportButton" Content="Выгрузить участников из MAX" Click="MaxExport_Click" HorizontalAlignment="Center" MinWidth="220" MinHeight="42" />
+                            <Button x:Name="OpenRaffleButton" Content="Открыть розыгрыш" Click="OpenRaffle_Click" UseSystemFocusVisuals="False" HorizontalAlignment="Center" MinWidth="220" MinHeight="46" IsEnabled="False" Background="#D2691E" Foreground="White" BorderBrush="#EC9A5C" PointerEntered="ActionButton_PointerEntered" PointerExited="ActionButton_PointerExited" PointerPressed="ActionButton_PointerPressed" PointerReleased="ActionButton_PointerReleased">
+                                <Button.Resources>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#D2691E" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#B95C1A" />
+                                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#EC9A5C" />
+                                    <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#EC9A5C" />
+                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White" />
+                                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White" />
+                                </Button.Resources>
+                            </Button>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -78,7 +87,16 @@
                         </Grid>
                     </Border>
                     <StackPanel HorizontalAlignment="Center" Spacing="10">
-                        <Button x:Name="SpinButton" Content="Выбрать победителя" Click="Spin_Click" UseSystemFocusVisuals="False" MinWidth="240" MinHeight="48" Background="#D2691E" Foreground="White" BorderBrush="#EC9A5C" PointerEntered="ActionButton_PointerEntered" PointerExited="ActionButton_PointerExited" PointerPressed="ActionButton_PointerPressed" PointerReleased="ActionButton_PointerReleased" />
+                        <Button x:Name="SpinButton" Content="Выбрать победителя" Click="Spin_Click" UseSystemFocusVisuals="False" MinWidth="240" MinHeight="48" Background="#D2691E" Foreground="White" BorderBrush="#EC9A5C" PointerEntered="ActionButton_PointerEntered" PointerExited="ActionButton_PointerExited" PointerPressed="ActionButton_PointerPressed" PointerReleased="ActionButton_PointerReleased">
+                            <Button.Resources>
+                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#D2691E" />
+                                <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#B95C1A" />
+                                <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#EC9A5C" />
+                                <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#EC9A5C" />
+                                <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White" />
+                                <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White" />
+                            </Button.Resources>
+                        </Button>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
@@ -125,7 +143,16 @@
                 </StackPanel>
                 </ScrollViewer>
                 <Canvas x:Name="StarShowerLayer" Grid.Row="0" IsHitTestVisible="False" />
-                <Button x:Name="AgainButton" Grid.Row="1" Content="Провести ещё один розыгрыш" Click="OpenRaffle_Click" UseSystemFocusVisuals="False" MinHeight="48" MinWidth="320" HorizontalAlignment="Center" HorizontalContentAlignment="Center" Margin="0,8,0,12" Background="#D2691E" Foreground="White" BorderBrush="#EC9A5C" PointerEntered="ActionButton_PointerEntered" PointerExited="ActionButton_PointerExited" PointerPressed="ActionButton_PointerPressed" PointerReleased="ActionButton_PointerReleased" />
+                <Button x:Name="AgainButton" Grid.Row="1" Content="Провести ещё один розыгрыш" Click="OpenRaffle_Click" UseSystemFocusVisuals="False" MinHeight="48" MinWidth="320" HorizontalAlignment="Center" HorizontalContentAlignment="Center" Margin="0,8,0,12" Background="#D2691E" Foreground="White" BorderBrush="#EC9A5C" PointerEntered="ActionButton_PointerEntered" PointerExited="ActionButton_PointerExited" PointerPressed="ActionButton_PointerPressed" PointerReleased="ActionButton_PointerReleased">
+                    <Button.Resources>
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#D2691E" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#B95C1A" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#EC9A5C" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#EC9A5C" />
+                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White" />
+                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White" />
+                    </Button.Resources>
+                </Button>
             </Grid>
         </Grid>
         <Button x:Name="AvatarStatusButton" Click="AvatarStatus_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="24" Width="44" Height="44" CornerRadius="22" Background="#BB000000" Foreground="White" Padding="0" Visibility="Collapsed">
