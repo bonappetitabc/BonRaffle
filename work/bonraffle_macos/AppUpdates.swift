@@ -185,7 +185,7 @@ final class AppUpdater: ObservableObject {
     private var downloadTask: Task<Void, Never>?
     private let notificationDelegate = UpdateNotificationDelegate()
     var canNotify: () -> Bool = { true }
-    let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.3.0"
+    let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.3.1"
 
     init() {
         automatic = preferences.automatic

@@ -20,6 +20,7 @@ if ! xcode-select -p >/dev/null 2>&1 || ! xcrun --find swiftc >/dev/null 2>&1; t
   exit 1
 fi
 
+APP_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT/Info.plist")"
 SDK="$(xcrun --sdk macosx --show-sdk-path)"
 SDK_VERSION="$(xcrun --sdk macosx --show-sdk-version)"
 SDK_MAJOR="${SDK_VERSION%%.*}"
@@ -51,19 +52,19 @@ export MACOSX_DEPLOYMENT_TARGET=15.0
 
 print "[1/6] Проверка Swift и загрузки CSV..."
 xcrun swiftc -frontend -parse "${SWIFT_FLAGS[@]}" \
-  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/BonRaffle.swift"
+  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/BonRaffle.swift"
 xcrun swiftc -O -sdk "$SDK" "$ROOT/RaffleData.swift" "$ROOT/AppUpdates.swift" "$ROOT/ImportSelfTest.swift" \
   -o "$BUILD/import-selftest"
 "$BUILD/import-selftest"
 
 print "[2/6] Сборка для Apple Silicon..."
 xcrun swiftc -O -sdk "$SDK" "${SWIFT_FLAGS[@]}" -target arm64-apple-macosx15.0 \
-  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/BonRaffle.swift" \
+  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/BonRaffle.swift" \
   -o "$BUILD/BonRaffle-arm64"
 
 print "[3/6] Сборка для Intel..."
 xcrun swiftc -O -sdk "$SDK" "${SWIFT_FLAGS[@]}" -target x86_64-apple-macosx15.0 \
-  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/BonRaffle.swift" \
+  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/BonRaffle.swift" \
   -o "$BUILD/BonRaffle-x86_64"
 
 print "[4/6] Создание универсального приложения..."
@@ -112,7 +113,7 @@ ditto "$APP" "$STAGING/${APP:t}"
 ln -s /Applications "$STAGING/Applications"
 
 print "[6/6] Создание DMG..."
-DMG="$ROOT/BonRaffle-macOS15-plus-2.3.0.dmg"
+DMG="$ROOT/BonRaffle-macOS15-plus-${APP_VERSION}.dmg"
 if (( TEST_UPDATES )); then
   DMG="$ROOT/BonRaffle-macOS-update-test.dmg"
 fi

@@ -953,6 +953,7 @@ final class RaffleModel: ObservableObject {
 
 @main
 struct BonRaffleApp: App {
+    @NSApplicationDelegateAdaptor(BonRaffleAppDelegate.self) private var appDelegate
     @StateObject private var model = RaffleModel()
     @Environment(\.openWindow) private var openWindow
 
@@ -973,9 +974,13 @@ struct BonRaffleApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Bon Raffle") {
-            MainView(model: model)
+        Window("Bon Raffle", id: "main") {
+            MainView(model: model, lifecycle: appDelegate)
                 .frame(minWidth: 720, minHeight: 620)
+                .onAppear {
+                    let openMain = openWindow
+                    appDelegate.openMainWindow = { openMain(id: "main") }
+                }
                 .onReceive(NotificationCenter.default.publisher(for: .bonRaffleUpdateRequested)) { _ in
                     openWindow(id: "updates")
                 }
@@ -991,7 +996,7 @@ struct BonRaffleApp: App {
                 Button("Проверить обновления…") { openWindow(id: "updates"); model.updates.check() }
             }
             CommandGroup(after: .sidebar) {
-                Button("Главная") { model.screen = .home }
+                Button("Главная") { model.screen = .home; appDelegate.showMainWindow() }
                 Button(model.appearance.showRemainingHeader
                        ? "Скрыть число участников"
                        : "Показать число участников") {
@@ -1050,6 +1055,7 @@ private struct MainWindowReader: NSViewRepresentable {
 
 private struct MainView: View {
     @ObservedObject var model: RaffleModel
+    let lifecycle: BonRaffleAppDelegate
     @Environment(\.openWindow) private var openWindow
     private let timer = Timer.publish(every: 1.0 / 144.0, on: .main, in: .common).autoconnect()
     @State private var countdownRemaining: TimeInterval = 300
@@ -1122,9 +1128,7 @@ private struct MainView: View {
         }
         .background(MainWindowReader { window in
             model.mainWindow = window
-            if model.settings.fullScreen && !window.styleMask.contains(.fullScreen) {
-                window.toggleFullScreen(nil)
-            }
+            lifecycle.attachMainWindow(window, startFullScreen: model.settings.fullScreen)
         })
         .sheet(item: $model.modal) { modal in
             switch modal {
