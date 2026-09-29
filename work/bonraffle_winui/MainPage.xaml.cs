@@ -604,16 +604,23 @@ public sealed partial class MainPage : Page
 
     private void ShowView(string view)
     {
+        var wasVisible = view switch
+        {
+            "home" => HomeView.Visibility == Visibility.Visible,
+            "raffle" => RaffleView.Visibility == Visibility.Visible,
+            "winner" => WinnerView.Visibility == Visibility.Visible,
+            _ => false
+        };
         StopRendering();
         HomeView.Visibility = view == "home" ? Visibility.Visible : Visibility.Collapsed;
         if (view == "home") _ = NotifyUpdateAsync();
         RaffleView.Visibility = view == "raffle" ? Visibility.Visible : Visibility.Collapsed;
         WinnerView.Visibility = view == "winner" ? Visibility.Visible : Visibility.Collapsed;
         _raffleActive = view == "raffle";
-        if (!_settings.ReduceEffects)
+        if (!_settings.ReduceEffects && !wasVisible)
             FadeIn(view == "home" ? HomeView : view == "raffle" ? RaffleView : WinnerView);
         if (_raffleActive) StartRendering();
-        FocusPrimaryAction();
+        if (!wasVisible) FocusPrimaryAction();
     }
 
     private void FocusPrimaryAction()

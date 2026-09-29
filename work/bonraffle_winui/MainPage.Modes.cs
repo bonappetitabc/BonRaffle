@@ -157,7 +157,7 @@ public sealed partial class MainPage
 
     private async void PrizesMode_Click(object sender, RoutedEventArgs e)
     {
-        if (_spinning) return;
+        if (_spinning || _prizeMode) return;
         try
         {
             var catalog = await PrizeStore.LoadCatalogAsync();
