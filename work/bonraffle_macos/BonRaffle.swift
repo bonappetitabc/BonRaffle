@@ -45,7 +45,11 @@ private struct ColoredSurface: ViewModifier {
         let shape = RoundedRectangle(cornerRadius: cornerRadius)
 #if HAS_LIQUID_GLASS
         if #available(macOS 26.0, *), glassEnabled {
-            content.glassEffect(.regular.tint(color.opacity(opacity)), in: shape)
+            content.background {
+                Color.clear
+                    .glassEffect(.regular.tint(color.opacity(opacity)), in: shape)
+                    .allowsHitTesting(false)
+            }
                 .overlay(shape.stroke(.white.opacity(0.17), lineWidth: 1))
         } else if glassEnabled {
             content.background(color.opacity(opacity * 0.55), in: shape)
@@ -519,6 +523,7 @@ final class RaffleModel: ObservableObject {
     }
 
     func switchToPrizes() {
+        guard !prizeMode else { return }
         let catalog = PrizeListLibrary.load()
         guard let id = catalog.activeId else { modal = .prizes; return }
         do { try activatePrizeList(catalog, id: id) }
@@ -1116,6 +1121,8 @@ private struct MainView: View {
     private let timer = Timer.publish(every: 1.0 / 144.0, on: .main, in: .common).autoconnect()
     @State private var countdownRemaining: TimeInterval = 300
     @State private var countdownDeadline: Date?
+    @State private var modeHovered = false
+    @State private var drumHovered = false
 
     private var configuredCountdown: Int { min(max(model.settings.countdownSeconds ?? 300, 60), 86_400) }
 
@@ -1232,9 +1239,12 @@ private struct MainView: View {
                      ? "Выберите список призов. Вес задаёт шанс, а количество уменьшается после каждого выигрыша."
                      : "Загрузите участников или выберите свой список для розыгрыша.")
                     .multilineTextAlignment(.center).foregroundStyle(.white.opacity(0.85))
+                    .frame(height: 44)
                 VStack(spacing: 16) {
                     HStack(spacing: 10) {
-                        Text("Режим").foregroundStyle(.white.opacity(0.85))
+                        Text("Режим")
+                            .foregroundStyle(.white.opacity(0.85))
+                            .frame(width: 62, alignment: .leading)
                         HStack(spacing: 4) {
                             modeButton("Участники", selected: !model.prizeMode) {
                                 model.switchToParticipants()
@@ -1246,7 +1256,8 @@ private struct MainView: View {
                         .padding(4)
                         .background(RoundedRectangle(cornerRadius: 8).fill(.white.opacity(0.12)))
                     }
-                    .frame(maxWidth: 560)
+                    .frame(width: 384)
+                    .onHover { modeHovered = $0 }
                     Text(model.prizeMode
                          ? "\(model.members.count.formatted()) видов призов"
                          : "\(model.members.count.formatted()) участников")
@@ -1292,15 +1303,15 @@ private struct MainView: View {
             .padding(.vertical, 48)
             .frame(maxWidth: .infinity)
         }
+        .scrollDisabled(modeHovered)
     }
 
     private func modeButton(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 15, weight: selected ? .semibold : .regular))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .frame(width: 150, height: 32)
                 .background(RoundedRectangle(cornerRadius: 5)
                     .fill(selected ? model.appearance.primaryButtonColor : Color.clear))
         }
@@ -1349,6 +1360,7 @@ private struct MainView: View {
                 }
             }
             RaffleDrumView(model: model)
+                .onHover { drumHovered = $0 }
             Button(model.spinning ? "Идёт розыгрыш…" : (model.prizeMode ? "Разыграть приз" : "Выбрать победителя")) { model.startSpin() }
                 .disabled(model.spinning)
                 .keyboardShortcut(.defaultAction)
@@ -1359,6 +1371,7 @@ private struct MainView: View {
         .frame(maxWidth: .infinity)
         .frame(minHeight: viewport.size.height, alignment: .center)
         }
+        .scrollDisabled(drumHovered)
         .onReceive(timer) { now in
             model.tick(now)
             if let deadline = countdownDeadline {
