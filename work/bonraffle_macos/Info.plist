@@ -15,7 +15,7 @@
     <key>LSMinimumSystemVersion</key><string>15.0</string>
     <key>LSUIElement</key><false/>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSHumanReadableCopyright</key><string>Автор: bonappetit.abc · © 2026 bonappetit.abc</string>
+    <key>NSHumanReadableCopyright</key><string>© 2026 Bon Raffle · Автор: bonappetit.abc</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.entertainment</string>
 </dict>
 </plist>
