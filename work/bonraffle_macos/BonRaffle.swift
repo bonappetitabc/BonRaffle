@@ -1233,14 +1233,20 @@ private struct MainView: View {
                      : "Загрузите участников или выберите свой список для розыгрыша.")
                     .multilineTextAlignment(.center).foregroundStyle(.white.opacity(0.85))
                 VStack(spacing: 16) {
-                    Picker("Режим", selection: Binding(
-                        get: { model.prizeMode ? 1 : 0 },
-                        set: { $0 == 1 ? model.switchToPrizes() : model.switchToParticipants() }
-                    )) {
-                        Text("Участники").tag(0)
-                        Text("Призы").tag(1)
+                    HStack(spacing: 10) {
+                        Text("Режим").foregroundStyle(.white.opacity(0.85))
+                        HStack(spacing: 4) {
+                            modeButton("Участники", selected: !model.prizeMode) {
+                                model.switchToParticipants()
+                            }
+                            modeButton("Призы", selected: model.prizeMode) {
+                                model.switchToPrizes()
+                            }
+                        }
+                        .padding(4)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(.white.opacity(0.12)))
                     }
-                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 560)
                     Text(model.prizeMode
                          ? "\(model.members.count.formatted()) видов призов"
                          : "\(model.members.count.formatted()) участников")
@@ -1286,6 +1292,19 @@ private struct MainView: View {
             .padding(.vertical, 48)
             .frame(maxWidth: .infinity)
         }
+    }
+
+    private func modeButton(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 15, weight: selected ? .semibold : .regular))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(RoundedRectangle(cornerRadius: 5)
+                    .fill(selected ? model.appearance.primaryButtonColor : Color.clear))
+        }
+        .buttonStyle(.plain)
     }
 
     private func raffle(in size: CGSize) -> some View {
