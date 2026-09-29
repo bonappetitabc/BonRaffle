@@ -1272,9 +1272,8 @@ private struct MainView: View {
                     Button(model.prizeMode ? "Открыть розыгрыш призов" : "Открыть розыгрыш") { model.openRaffle() }
                         .disabled(model.remainingCount == 0 || model.importing)
                         .keyboardShortcut(.defaultAction)
-                        .buttonStyle(.borderedProminent)
-                        .tint(model.appearance.primaryButtonColor)
-                        .modifier(GentleHover(enabled: !model.settings.reduceEffects))
+                        .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor,
+                                                             minWidth: 220, minHeight: 46))
                         .frame(maxWidth: .infinity)
                 }
                 .padding(28)
@@ -1334,9 +1333,8 @@ private struct MainView: View {
             Button(model.spinning ? "Идёт розыгрыш…" : (model.prizeMode ? "Разыграть приз" : "Выбрать победителя")) { model.startSpin() }
                 .disabled(model.spinning)
                 .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent).tint(model.appearance.primaryButtonColor)
-                .modifier(GentleHover(enabled: !model.settings.reduceEffects))
-                .controlSize(.large)
+                .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor,
+                                                     minWidth: 240, minHeight: 48))
         }
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity)
@@ -1425,23 +1423,47 @@ private struct MainView: View {
             }
                 .disabled(model.remainingCount == 0)
                 .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent).tint(model.appearance.primaryButtonColor).controlSize(.large)
-                .modifier(GentleHover(enabled: !model.settings.reduceEffects))
+                .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor,
+                                                     minWidth: 320, minHeight: 48))
                 .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-private struct GentleHover: ViewModifier {
-    let enabled: Bool
+private struct PrimaryActionButtonStyle: ButtonStyle {
+    let color: Color
+    var minWidth: CGFloat = 0
+    var minHeight: CGFloat = 34
+
+    func makeBody(configuration: Configuration) -> some View {
+        PrimaryActionButtonFace(configuration: configuration, color: color,
+                                minWidth: minWidth, minHeight: minHeight)
+    }
+}
+
+private struct PrimaryActionButtonFace: View {
+    let configuration: ButtonStyle.Configuration
+    let color: Color
+    let minWidth: CGFloat
+    let minHeight: CGFloat
+    @Environment(\.isEnabled) private var isEnabled
     @State private var hovering = false
 
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(enabled && hovering ? 1.025 : 1)
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 6)
+        configuration.label
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .frame(minWidth: minWidth, minHeight: minHeight)
+            .background(shape.fill(color)
+                .brightness(configuration.isPressed ? -0.10 : (hovering ? 0.05 : 0)))
+            .overlay(shape.stroke(.white.opacity(0.16), lineWidth: 1))
+            .contentShape(shape)
+            .opacity(isEnabled ? 1 : 0.55)
             .onHover { hovering = $0 }
-            .animation(.easeOut(duration: 0.15), value: hovering)
+            .animation(.easeOut(duration: 0.12), value: hovering)
     }
 }
 
@@ -1782,7 +1804,7 @@ private struct HelpView: View {
             HStack {
                 Text("Версия \(version)")
                 Spacer()
-                Text("© 2026 bonappetit.abc · MIT")
+                Text("© 2026 Bon Raffle · MIT")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -1955,8 +1977,7 @@ private struct ManualListView: View {
             }
             Button(editingID == nil ? "Добавить запись" : "Сохранить изменения") { addOrUpdate() }
                 .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .buttonStyle(.borderedProminent)
-                .tint(model.appearance.primaryButtonColor)
+                .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor))
                 .frame(maxWidth: .infinity, alignment: .leading)
             Spacer(minLength: 0)
             Text("Без картинки используется стандартный аватар Bon Raffle.")
@@ -2072,8 +2093,7 @@ private struct ManualListView: View {
                     } catch { message = error.localizedDescription }
                 }
                 .disabled(entries.isEmpty && name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .buttonStyle(.borderedProminent)
-                .tint(model.appearance.primaryButtonColor)
+                .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor))
             }
         }
         .padding(22)
@@ -2247,7 +2267,7 @@ private struct PrizeRaffleView: View {
             }
             Button(editingID == nil ? "Добавить приз" : "Сохранить изменения") { addOrUpdate() }
                 .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .buttonStyle(.borderedProminent).tint(model.appearance.primaryButtonColor)
+                .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor))
             Button("Новый приз") { clearEditor() }
             Spacer(minLength: 0)
             Text("Вес задаёт относительный шанс, пока приз доступен. Процент справа пересчитывается автоматически.")
@@ -2347,7 +2367,7 @@ private struct PrizeRaffleView: View {
                     catch { message = error.localizedDescription }
                 }
                     .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent).tint(model.appearance.primaryButtonColor)
+                    .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor))
             }
         }
         .padding(22)
@@ -2660,7 +2680,7 @@ private struct SettingsView: View {
                     Text("Свои списки и картинки хранятся на этом Mac в папке данных Bon Raffle. Токен MAX хранится в Связке ключей. Исходный код распространяется по лицензии MIT.")
                     Text("Версия: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")")
                     Text("Автор: bonappetit.abc")
-                    Text("© 2026 bonappetit.abc")
+                    Text("© 2026 Bon Raffle")
                 }
                 Section("Обновления") { AppUpdateView(updater: model.updates) }
             }
