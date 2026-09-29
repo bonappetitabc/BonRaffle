@@ -2408,9 +2408,7 @@ private struct SettingsView: View {
                     set: { if liquidGlassAvailable { model.settings.useLiquidGlass = $0 } }
                 ))
                 .disabled(!liquidGlassAvailable)
-                Text(liquidGlassAvailable
-                     ? "Включает системный Liquid Glass на панелях Bon Raffle. Системные кнопки и поля оформляет macOS."
-                     : "Системный Liquid Glass недоступен: нужны macOS 26 и сборка с его поддержкой. Обычное размытие и настройки прозрачности панелей сохранены.")
+                Text("Liquid Glass доступен в macOS 26 и новее.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             } else if selectedSection == 1 {
