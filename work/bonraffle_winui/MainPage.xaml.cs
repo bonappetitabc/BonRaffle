@@ -576,6 +576,7 @@ public sealed partial class MainPage : Page
             SetButtonStateColor(button, "ButtonForegroundPointerOver", Colors.White);
             SetButtonStateColor(button, "ButtonForegroundPressed", Colors.White);
         }
+        ApplyModeColors(color);
     }
 
     private static void SetButtonStateColor(Button button, string key, Color color)

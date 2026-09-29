@@ -115,10 +115,7 @@ public sealed partial class MainPage
 
     private void ApplyModeUI()
     {
-        var active = new SolidColorBrush(ParseColor("#D2691E"));
-        var inactive = new SolidColorBrush(Color.FromArgb(120, 58, 106, 150));
-        ParticipantsModeButton.Background = _prizeMode ? inactive : active;
-        PrizesModeButton.Background = _prizeMode ? active : inactive;
+        ApplyModeColors(ParseColor(_settings.PrimaryButtonColor));
         ImportButton.Visibility = _prizeMode ? Visibility.Collapsed : Visibility.Visible;
         ManualListButton.Visibility = _prizeMode ? Visibility.Collapsed : Visibility.Visible;
         MaxExportButton.Visibility = _prizeMode ? Visibility.Collapsed : Visibility.Visible;
@@ -130,6 +127,25 @@ public sealed partial class MainPage
         HomeSubtitle.Text = _prizeMode
             ? "Попробуйте демонстрационные призы или создайте свой набор."
             : "Попробуйте демонстрационный список или загрузите свой.";
+    }
+
+    private void ApplyModeColors(Color primaryColor)
+    {
+        var inactiveColor = Color.FromArgb(120, 58, 106, 150);
+        foreach (var (button, selected) in new[]
+                 {
+                     (ParticipantsModeButton, !_prizeMode),
+                     (PrizesModeButton, _prizeMode)
+                 })
+        {
+            var color = selected ? primaryColor : inactiveColor;
+            var pressed = selected
+                ? Color.FromArgb(255, (byte)(color.R * 0.88), (byte)(color.G * 0.88), (byte)(color.B * 0.88))
+                : inactiveColor;
+            button.Background = new SolidColorBrush(color);
+            SetButtonStateColor(button, "ButtonBackgroundPointerOver", color);
+            SetButtonStateColor(button, "ButtonBackgroundPressed", pressed);
+        }
     }
 
     private async void ParticipantsMode_Click(object sender, RoutedEventArgs e)

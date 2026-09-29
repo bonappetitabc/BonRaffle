@@ -29,8 +29,22 @@
                         <StackPanel Spacing="16">
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
                                 <TextBlock Text="Режим" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0" />
-                                <Button x:Name="ParticipantsModeButton" Content="Участники" Click="ParticipantsMode_Click" />
-                                <Button x:Name="PrizesModeButton" Content="Призы" Click="PrizesMode_Click" />
+                                <Button x:Name="ParticipantsModeButton" Content="Участники" Click="ParticipantsMode_Click" Foreground="White">
+                                    <Button.Resources>
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#D2691E" />
+                                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#B95C1A" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White" />
+                                    </Button.Resources>
+                                </Button>
+                                <Button x:Name="PrizesModeButton" Content="Призы" Click="PrizesMode_Click" Foreground="White">
+                                    <Button.Resources>
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#D2691E" />
+                                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#B95C1A" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White" />
+                                    </Button.Resources>
+                                </Button>
                             </StackPanel>
                             <TextBlock x:Name="MemberCount" Text="0 участников" FontSize="32" FontWeight="Bold" Foreground="White" TextAlignment="Center" />
                             <TextBlock x:Name="FileStatus" Text="Выберите файл со списком" Foreground="#BED5C5" TextAlignment="Center" TextWrapping="Wrap" />
