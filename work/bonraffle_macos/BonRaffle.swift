@@ -2659,6 +2659,7 @@ private struct SettingsView: View {
                     Text("Для знакомства включены четыре примера: участники, столики и два набора призов. Их можно изменить или удалить.")
                     Text("Свои списки и картинки хранятся на этом Mac в папке данных Bon Raffle. Токен MAX хранится в Связке ключей. Исходный код распространяется по лицензии MIT.")
                     Text("Версия: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")")
+                    Text("Автор: bonappetit.abc")
                     Text("© 2026 bonappetit.abc")
                 }
                 Section("Обновления") { AppUpdateView(updater: model.updates) }
