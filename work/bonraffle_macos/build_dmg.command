@@ -118,8 +118,9 @@ if (( TEST_UPDATES )); then
   DMG="$ROOT/BonRaffle-macOS-update-test.dmg"
 fi
 TEMP_DMG="$STAGING_ROOT/BonRaffle.dmg"
-diskutil image create from --format UDZO "$STAGING" "$TEMP_DMG"
-diskutil image info "$TEMP_DMG" >/dev/null
+# Use the established UDIF tooling; diskutil image UDZO is unavailable on macOS 15.
+hdiutil create -srcfolder "$STAGING" -volname "Bon Raffle" -format UDZO -ov "$TEMP_DMG"
+hdiutil verify "$TEMP_DMG" >/dev/null
 mv -f -- "$TEMP_DMG" "$DMG"
 print "Готово: $DMG"
 print "Перетащи приложение из DMG в Applications и проверь запуск."
