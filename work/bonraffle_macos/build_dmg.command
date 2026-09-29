@@ -36,9 +36,9 @@ if (( SDK_MAJOR >= 26 )); then
   SWIFT_FLAGS+=(-D HAS_LIQUID_GLASS)
   print "SDK macOS ${SDK_VERSION}: поддержка Liquid Glass добавлена. Эффект работает на macOS 26 и новее."
 else
-  print "SDK macOS ${SDK_VERSION}: используется совместимое полупрозрачное оформление."
+  print "SDK macOS ${SDK_VERSION}: системный Liquid Glass недоступен; обычное полупрозрачное оформление сохранено."
   if (( OS_MAJOR >= 26 )); then
-    print -u2 "Для системного Liquid Glass установи Xcode с SDK macOS 26 или новее. Сборка продолжается с совместимым оформлением."
+    print -u2 "Для системного Liquid Glass установи Xcode с SDK macOS 26 или новее. Сборка продолжается без Liquid Glass."
   fi
 fi
 BUILD="$ROOT/.build-native"

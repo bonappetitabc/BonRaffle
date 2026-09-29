@@ -364,6 +364,10 @@ final class RaffleModel: ObservableObject {
         var index = 0
         var offset: CGFloat = 0
     }
+    @MainActor
+    final class DrumAnimation: ObservableObject {
+        @Published var frame = DrumFrame()
+    }
     struct DrumEntry: Identifiable {
         let id: Int
         let member: Member
@@ -403,7 +407,12 @@ final class RaffleModel: ObservableObject {
     @Published var maxExporting = false
     @Published var spinning = false
     @Published var winner: Member?
-    @Published var drumFrame = DrumFrame()
+    // Animation frames only invalidate the drum, not settings or the background.
+    let drumAnimation = DrumAnimation()
+    private var drumFrame: DrumFrame {
+        get { drumAnimation.frame }
+        set { drumAnimation.frame = newValue }
+    }
     @Published var backgroundRevision = 0
     @Published var burstStarted = Date.distantPast
     @Published var selectedWinnerEffect = "balloons"
@@ -1053,6 +1062,53 @@ private struct MainWindowReader: NSViewRepresentable {
     }
 }
 
+private struct RaffleDrumView: View {
+    @ObservedObject var model: RaffleModel
+    @ObservedObject private var animation: RaffleModel.DrumAnimation
+
+    init(model: RaffleModel) {
+        self.model = model
+        _animation = ObservedObject(wrappedValue: model.drumAnimation)
+    }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(model.appearance.selectionColor.opacity(0.28 * model.appearance.drumOpacity))
+                .frame(height: 58)
+                .offset(y: 2 * 64)
+            VStack(spacing: 0) {
+                ForEach(model.visibleDrumEntries()) { entry in
+                    HStack(spacing: 14) {
+                        AvatarView(cache: model.avatarCache, member: entry.member, showRemote: model.settings.showAvatars,
+                                   fallback: model.avatarPlaceholder, size: 40, isPrize: model.prizeMode)
+                        Text(entry.member.name).lineLimit(1).font(.system(size: 17))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(height: 58)
+                    .background(Color.black.opacity(0.10 * model.appearance.drumOpacity),
+                                in: RoundedRectangle(cornerRadius: 10))
+                    .padding(.bottom, 6)
+                }
+            }
+            .offset(y: -animation.frame.offset)
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(model.appearance.selectionColor.opacity(0.9), lineWidth: 2)
+                .frame(height: 58)
+                .offset(y: 2 * 64)
+                .allowsHitTesting(false)
+        }
+        .frame(width: 440, height: 5 * 64, alignment: .top)
+        .clipped()
+        .padding(12)
+        .modifier(ColoredSurface(color: model.appearance.drumColor,
+                                 opacity: model.appearance.drumOpacity,
+                                 cornerRadius: 18,
+                                 glassEnabled: model.settings.useLiquidGlass ?? true))
+    }
+}
+
 private struct MainView: View {
     @ObservedObject var model: RaffleModel
     let lifecycle: BonRaffleAppDelegate
@@ -1274,40 +1330,7 @@ private struct MainView: View {
                     .frame(maxWidth: 440)
                 }
             }
-            ZStack(alignment: .top) {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(model.appearance.selectionColor.opacity(0.28 * model.appearance.drumOpacity))
-                    .frame(height: 58)
-                    .offset(y: 2 * 64)
-                VStack(spacing: 0) {
-                    ForEach(model.visibleDrumEntries()) { entry in
-                        HStack(spacing: 14) {
-                            AvatarView(cache: model.avatarCache, member: entry.member, showRemote: model.settings.showAvatars,
-                                       fallback: model.avatarPlaceholder, size: 40, isPrize: model.prizeMode)
-                            Text(entry.member.name).lineLimit(1).font(.system(size: 17))
-                            Spacer()
-                        }
-                        .padding(.horizontal, 14)
-                        .frame(height: 58)
-                        .background(Color.black.opacity(0.10 * model.appearance.drumOpacity),
-                                    in: RoundedRectangle(cornerRadius: 10))
-                        .padding(.bottom, 6)
-                    }
-                }
-                .offset(y: -model.drumFrame.offset)
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(model.appearance.selectionColor.opacity(0.9), lineWidth: 2)
-                    .frame(height: 58)
-                    .offset(y: 2 * 64)
-                    .allowsHitTesting(false)
-            }
-            .frame(width: 440, height: 5 * 64, alignment: .top)
-            .clipped()
-            .padding(12)
-            .modifier(ColoredSurface(color: model.appearance.drumColor,
-                                     opacity: model.appearance.drumOpacity,
-                                     cornerRadius: 18,
-                                     glassEnabled: model.settings.useLiquidGlass ?? true))
+            RaffleDrumView(model: model)
             Button(model.spinning ? "Идёт розыгрыш…" : (model.prizeMode ? "Разыграть приз" : "Выбрать победителя")) { model.startSpin() }
                 .disabled(model.spinning)
                 .keyboardShortcut(.defaultAction)
@@ -1379,7 +1402,6 @@ private struct MainView: View {
                                              cornerRadius: 24,
                                              glassEnabled: model.settings.useLiquidGlass ?? true))
                     .overlay(RoundedRectangle(cornerRadius: 24).stroke(model.appearance.winnerCardBorderColor.opacity(0.85), lineWidth: 2))
-                    .shadow(color: gold.opacity(0.30), radius: 22, y: 10)
                     .transition(.scale(scale: 0.92).combined(with: .opacity).combined(with: .offset(y: 20)))
                 }
                 if !model.settings.reduceEffects && model.selectedWinnerEffect != "stars" {
@@ -2382,12 +2404,13 @@ private struct SettingsView: View {
             }
             Section("Оформление") {
                 Toggle("Стеклянные панели Liquid Glass", isOn: Binding(
-                    get: { model.settings.useLiquidGlass ?? true },
-                    set: { model.settings.useLiquidGlass = $0 }
+                    get: { liquidGlassAvailable && (model.settings.useLiquidGlass ?? true) },
+                    set: { if liquidGlassAvailable { model.settings.useLiquidGlass = $0 } }
                 ))
+                .disabled(!liquidGlassAvailable)
                 Text(liquidGlassAvailable
                      ? "Включает системный Liquid Glass на панелях Bon Raffle. Системные кнопки и поля оформляет macOS."
-                     : "На этом Mac используется совместимое полупрозрачное оформление. Системный Liquid Glass требует macOS 26 и SDK macOS 26.")
+                     : "Системный Liquid Glass недоступен: нужны macOS 26 и сборка с его поддержкой. Обычное размытие и настройки прозрачности панелей сохранены.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             } else if selectedSection == 1 {
