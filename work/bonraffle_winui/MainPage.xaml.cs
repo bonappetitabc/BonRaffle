@@ -557,10 +557,6 @@ public sealed partial class MainPage : Page
 
     private void ApplyPrimaryButtonColors(Color color)
     {
-        var border = Color.FromArgb(255,
-            (byte)Math.Min(color.R + 28, 255),
-            (byte)Math.Min(color.G + 28, 255),
-            (byte)Math.Min(color.B + 28, 255));
         var pressed = Color.FromArgb(255,
             (byte)(color.R * 0.88),
             (byte)(color.G * 0.88),
@@ -568,11 +564,11 @@ public sealed partial class MainPage : Page
         foreach (var button in new[] { OpenRaffleButton, SpinButton, AgainButton })
         {
             button.Background = new SolidColorBrush(color);
-            button.BorderBrush = new SolidColorBrush(border);
+            button.BorderBrush = new SolidColorBrush(color);
             SetButtonStateColor(button, "ButtonBackgroundPointerOver", color);
             SetButtonStateColor(button, "ButtonBackgroundPressed", pressed);
-            SetButtonStateColor(button, "ButtonBorderBrushPointerOver", border);
-            SetButtonStateColor(button, "ButtonBorderBrushPressed", border);
+            SetButtonStateColor(button, "ButtonBorderBrushPointerOver", color);
+            SetButtonStateColor(button, "ButtonBorderBrushPressed", pressed);
             SetButtonStateColor(button, "ButtonForegroundPointerOver", Colors.White);
             SetButtonStateColor(button, "ButtonForegroundPressed", Colors.White);
         }
