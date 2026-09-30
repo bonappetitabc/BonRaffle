@@ -54,11 +54,21 @@ struct ImportSelfTest {
         [{"tag_name":"windows-v9.0.0","draft":false,"prerelease":false,"assets":[]},
          {"tag_name":"macos-v2.3.0","draft":false,"prerelease":false,"body":"Changes","assets":[
            {"name":"BonRaffle-macOS15-plus-2.3.0.dmg","size":3,"digest":"sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-            "browser_download_url":"https://github.com/bonappetitabc/BonRaffle/releases/download/macos-v2.3.0/BonRaffle-macOS15-plus-2.3.0.dmg"}]}]
+            "browser_download_url":"https://github.com/bonappetitabc/BonRaffle/releases/download/macos-v2.3.0/BonRaffle-macOS15-plus-2.3.0.dmg"}]},
+         {"tag_name":"v2.3.3","draft":false,"prerelease":false,"body":"Changes","assets":[
+           {"name":"Bon-Raffle-Setup-2.3.3.exe","size":3,"digest":"sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+            "browser_download_url":"https://github.com/bonappetitabc/BonRaffle/releases/download/v2.3.3/Bon-Raffle-Setup-2.3.3.exe"},
+           {"name":"BonRaffle-macOS15-plus-2.3.3.dmg","size":3,"digest":"sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+            "browser_download_url":"https://github.com/bonappetitabc/BonRaffle/releases/download/v2.3.3/BonRaffle-macOS15-plus-2.3.3.dmg"}]}]
         """
         let releases = try JSONDecoder().decode([AppUpdateClient.GitHubRelease].self, from: Data(releaseJSON.utf8))
         guard AppUpdateClient.candidate(releases[0]) == nil,
               let update = AppUpdateClient.candidate(releases[1]), update.version == "2.3.0",
+              let sharedMac = AppUpdateClient.candidate(releases[2]),
+              sharedMac.fileName == "BonRaffle-macOS15-plus-2.3.3.dmg",
+              let sharedWindows = AppUpdateClient.candidate(releases[2], platform: "windows"),
+              sharedWindows.fileName == "Bon-Raffle-Setup-2.3.3.exe",
+              sharedMac.sha256 == sharedWindows.sha256,
               UpdateVersion("2.10.0")! > UpdateVersion("2.9.0")!, UpdateVersion("2.3.0-beta") == nil else {
             throw AppUpdateError.unavailable
         }

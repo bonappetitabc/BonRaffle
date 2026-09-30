@@ -50,10 +50,16 @@ enum AppUpdateClient {
     }
 
     static func candidate(_ release: GitHubRelease, platform: String = "macos") -> AppRelease? {
-        let prefix = platform + "-v"
-        guard ["macos", "windows"].contains(platform), !release.draft, !release.prerelease,
-              release.tag_name.hasPrefix(prefix) else { return nil }
-        let version = String(release.tag_name.dropFirst(prefix.count))
+        guard ["macos", "windows"].contains(platform), !release.draft, !release.prerelease else { return nil }
+        let legacyPrefix = platform + "-v"
+        let version: String
+        if release.tag_name.hasPrefix(legacyPrefix) {
+            version = String(release.tag_name.dropFirst(legacyPrefix.count))
+        } else if release.tag_name.hasPrefix("v") {
+            version = String(release.tag_name.dropFirst())
+        } else {
+            return nil
+        }
         guard UpdateVersion(version) != nil else { return nil }
         let name = platform == "macos" ? "BonRaffle-macOS15-plus-\(version).dmg" : "Bon-Raffle-Setup-\(version).exe"
         let address = "\(repository)/releases/download/\(release.tag_name)/\(name)"
@@ -185,7 +191,7 @@ final class AppUpdater: ObservableObject {
     private var downloadTask: Task<Void, Never>?
     private let notificationDelegate = UpdateNotificationDelegate()
     var canNotify: () -> Bool = { true }
-    let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.3.1"
+    let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.3.3"
 
     init() {
         automatic = preferences.automatic
@@ -259,7 +265,7 @@ final class AppUpdater: ObservableObject {
         downloading = true
         progress = 0
         status = "Скачиваем обновление…"
-        downloadTask = Task {
+        downloadTask = Task { [self] in
             defer { busy = false; downloading = false; downloadTask = nil }
             do {
                 let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]

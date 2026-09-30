@@ -49,7 +49,8 @@ public sealed class AppUpdateClient(HttpClient http)
         if (platform is not ("windows" or "macos") || item.GetProperty("draft").GetBoolean() ||
             item.GetProperty("prerelease").GetBoolean()) return null;
         var tag = item.GetProperty("tag_name").GetString() ?? "";
-        var match = Regex.Match(tag, "^" + platform + @"-v([0-9]+\.[0-9]+\.[0-9]+)$");
+        // Keep older platform releases discoverable while accepting one release with both installers.
+        var match = Regex.Match(tag, "^(?:" + platform + @"-v|v)([0-9]+\.[0-9]+\.[0-9]+)$");
         if (!match.Success || !Version.TryParse(match.Groups[1].Value, out var version)) return null;
         var name = platform == "windows" ? $"Bon-Raffle-Setup-{version}.exe" : $"BonRaffle-macOS15-plus-{version}.dmg";
         var page = new Uri($"{Repository}/releases/tag/{tag}");
