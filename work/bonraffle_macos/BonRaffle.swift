@@ -1245,7 +1245,7 @@ private struct MainView: View {
                         Text("Режим")
                             .foregroundStyle(.white.opacity(0.85))
                             .frame(width: 62, alignment: .leading)
-                        HStack(spacing: 4) {
+                        HStack(spacing: 3) {
                             modeButton("Участники", selected: !model.prizeMode) {
                                 model.switchToParticipants()
                             }
@@ -1253,10 +1253,10 @@ private struct MainView: View {
                                 model.switchToPrizes()
                             }
                         }
-                        .padding(4)
+                        .padding(3)
                         .background(RoundedRectangle(cornerRadius: 8).fill(.white.opacity(0.12)))
                     }
-                    .frame(width: 384)
+                    .frame(width: 304)
                     .onHover { modeHovered = $0 }
                     Text(model.prizeMode
                          ? "\(model.members.count.formatted()) видов призов"
@@ -1275,14 +1275,18 @@ private struct MainView: View {
                     if model.maxExporting { ProgressView().controlSize(.large) }
                     if model.prizeMode {
                         Button("Создать или изменить призы") { model.modal = .prizes }
+                            .controlSize(.small)
                             .frame(maxWidth: .infinity)
                     } else {
                         Button("Загрузить участников") { model.chooseMembers() }
-                            .disabled(model.importing || model.maxExporting).frame(maxWidth: .infinity)
+                            .disabled(model.importing || model.maxExporting)
+                            .controlSize(.small).frame(maxWidth: .infinity)
                         Button("Создать свой список") { model.modal = .manualList }
-                            .disabled(model.importing).frame(maxWidth: .infinity)
+                            .disabled(model.importing)
+                            .controlSize(.small).frame(maxWidth: .infinity)
                         Button("Выгрузить участников из MAX") { Task { await model.exportMaxRoster() } }
                             .disabled(model.maxExporting || model.importing)
+                            .controlSize(.small)
                             .frame(maxWidth: .infinity)
                         if model.maxExporting { ProgressView("Получение списка MAX…") }
                     }
@@ -1290,7 +1294,7 @@ private struct MainView: View {
                         .disabled(model.remainingCount == 0 || model.importing)
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor,
-                                                             minWidth: 220, minHeight: 46))
+                                                             minWidth: 190, minHeight: 38))
                         .frame(maxWidth: .infinity)
                 }
                 .padding(28)
@@ -1309,11 +1313,12 @@ private struct MainView: View {
     private func modeButton(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 150, height: 32)
+                .frame(width: 112, height: 28)
                 .background(RoundedRectangle(cornerRadius: 5)
-                    .fill(selected ? model.appearance.primaryButtonColor : Color.clear))
+                    .fill(selected ? model.appearance.primaryButtonColor : Color.white.opacity(0.001)))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -1365,9 +1370,11 @@ private struct MainView: View {
                 .disabled(model.spinning)
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor,
-                                                     minWidth: 240, minHeight: 48))
+                                                     minWidth: 200, minHeight: 38))
+                .padding(.top, 102)
         }
-        .padding(.vertical, 14)
+        .padding(.top, 110)
+        .padding(.bottom, 14)
         .frame(maxWidth: .infinity)
         .frame(minHeight: viewport.size.height, alignment: .center)
         }
@@ -1456,8 +1463,8 @@ private struct MainView: View {
                 .disabled(model.remainingCount == 0)
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor,
-                                                     minWidth: 320, minHeight: 48))
-                .padding(.bottom, 16)
+                                                     minWidth: 250, minHeight: 38))
+                .padding(.bottom, 64)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -1466,7 +1473,7 @@ private struct MainView: View {
 private struct PrimaryActionButtonStyle: ButtonStyle {
     let color: Color
     var minWidth: CGFloat = 0
-    var minHeight: CGFloat = 34
+    var minHeight: CGFloat = 32
 
     func makeBody(configuration: Configuration) -> some View {
         PrimaryActionButtonFace(configuration: configuration, color: color,
@@ -1485,13 +1492,12 @@ private struct PrimaryActionButtonFace: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: 6)
         configuration.label
-            .font(.system(size: 16, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 14)
             .frame(minWidth: minWidth, minHeight: minHeight)
             .background(shape.fill(color)
                 .brightness(configuration.isPressed ? -0.10 : (hovering ? 0.05 : 0)))
-            .overlay(shape.stroke(.white.opacity(0.16), lineWidth: 1))
             .contentShape(shape)
             .opacity(isEnabled ? 1 : 0.55)
             .onHover { hovering = $0 }
