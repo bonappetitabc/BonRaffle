@@ -131,4 +131,4 @@
 
 ## Лицензия
 
-[MIT](LICENSE). © 2026 bonappetit.abc.
+[MIT](LICENSE). © 2026 Bon Raffle.
