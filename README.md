@@ -13,58 +13,70 @@
 <details>
 <summary>Скриншоты Windows</summary>
 
-**Участники**
+**Загрузка участников из MAX**
 
-![Главный экран со списком участников на Windows](docs/screenshots/home-participants-windows.png)
+![Загрузка участников из MAX на Windows](docs/screenshots/max-loading-windows.png)
 
-**Результат розыгрыша приза**
+**Списки участников**
 
-![Карточка выпавшего приза](docs/screenshots/prize-winner-windows.png)
+![Редактор списка участников на Windows](docs/screenshots/lists-participants-windows.png)
 
-**Основные настройки**
+**Режим призов**
 
-![Основные настройки Bon Raffle на Windows](docs/screenshots/settings-general-windows.png)
+![Главный экран розыгрыша призов на Windows](docs/screenshots/home-prizes-windows.png)
+
+**Списки призов**
+
+![Редактор списка призов на Windows](docs/screenshots/lists-prizes-windows.png)
+
+**Барабан участников**
+
+![Барабан с участниками на Windows](docs/screenshots/drum-participants-windows.png)
+
+**Настройки розыгрыша**
+
+![Настройки розыгрыша на Windows](docs/screenshots/settings-raffle-windows.png)
 
 **Настройки оформления**
 
-![Настройки оформления Bon Raffle на Windows](docs/screenshots/settings-appearance-windows.png)
-
-**Уведомление об обновлении**
-
-![Плашка новой версии Bon Raffle на Windows](docs/screenshots/update-notice-windows.png)
-
-**Настройки обновлений**
-
-![Настройки обновлений Bon Raffle на Windows](docs/screenshots/settings-updates-windows.png)
+![Настройки оформления на Windows](docs/screenshots/settings-appearance-windows.png)
 
 </details>
 
 <details>
 <summary>Скриншоты macOS</summary>
 
-**Участники**
+**Режим участников**
 
-![Главный экран со списком участников на macOS](docs/screenshots/home-participants-macos.png)
+![Главный экран участников на macOS](docs/screenshots/home-participants-macos.png)
 
-**Результат розыгрыша приза**
+**Загрузка участников из MAX**
 
-![Карточка выпавшего приза на macOS](docs/screenshots/prize-winner-macos.png)
+![Загрузка участников из MAX на macOS](docs/screenshots/max-loading-macos.png)
 
-**Основные настройки**
+**Списки участников**
 
-![Основные настройки Bon Raffle на macOS](docs/screenshots/settings-general-macos.png)
+![Редактор списка участников на macOS](docs/screenshots/lists-participants-macos.png)
+
+**Режим призов**
+
+![Главный экран розыгрыша призов на macOS](docs/screenshots/home-prizes-macos.png)
+
+**Списки призов**
+
+![Редактор списка призов на macOS](docs/screenshots/lists-prizes-macos.png)
+
+**Барабан участников**
+
+![Барабан с участниками на macOS](docs/screenshots/drum-participants-macos.png)
+
+**Настройки розыгрыша**
+
+![Настройки розыгрыша на macOS](docs/screenshots/settings-raffle-macos.png)
 
 **Настройки оформления**
 
-![Настройки оформления Bon Raffle на macOS](docs/screenshots/settings-appearance-macos.png)
-
-**Обновления**
-
-Проверка обновлений в тестовой копии macOS.
-
-![Плашка доступной версии Bon Raffle на macOS](docs/screenshots/update-notice-macos.png)
-
-![Настройки и описание обновления Bon Raffle на macOS](docs/screenshots/settings-updates-macos.png)
+![Настройки оформления на macOS](docs/screenshots/settings-appearance-macos.png)
 
 </details>
 
