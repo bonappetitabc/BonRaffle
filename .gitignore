@@ -5,7 +5,7 @@
 !/README.md
 !/LICENSE
 !/docs/
-!/work/
+!/Bon Raffle/
 
 /docs/*
 !/docs/screenshots/
@@ -26,46 +26,46 @@
 !/docs/screenshots/settings-raffle-macos.png
 !/docs/screenshots/settings-appearance-macos.png
 
-/work/*
-!/work/bonraffle_winui/
-!/work/bonraffle_macos/
+/Bon Raffle/*
+!/Bon Raffle/bonraffle_winui/
+!/Bon Raffle/bonraffle_macos/
 
-/work/bonraffle_winui/*
-!/work/bonraffle_winui/*.cs
-!/work/bonraffle_winui/*.xaml
-!/work/bonraffle_winui/*.csproj
-!/work/bonraffle_winui/*.manifest
-!/work/bonraffle_winui/*.appxmanifest
-!/work/bonraffle_winui/LICENSE.txt
-!/work/bonraffle_winui/ThirdPartyNotices.txt
-!/work/bonraffle_winui/Assets/
-/work/bonraffle_winui/Assets/*
-!/work/bonraffle_winui/Assets/LockScreenLogo.scale-200.png
-!/work/bonraffle_winui/Assets/Square150x150Logo.scale-200.png
-!/work/bonraffle_winui/Assets/Square44x44Logo.scale-200.png
-!/work/bonraffle_winui/Assets/Square44x44Logo.targetsize-24_altform-unplated.png
-!/work/bonraffle_winui/Assets/Square44x44Logo.targetsize-48_altform-lightunplated.png
-!/work/bonraffle_winui/Assets/StoreLogo.png
-!/work/bonraffle_winui/Assets/AppIcon.ico
-!/work/bonraffle_winui/Assets/logo-bon-raffle.png
-!/work/bonraffle_winui/Assets/background-bon-raffle.png
-!/work/bonraffle_winui/Assets/ApplIcation-bon-raffle.png
-!/work/bonraffle_winui/Assets/AvatarPlaceholder.png
-!/work/bonraffle_winui/Assets/Demo/
-/work/bonraffle_winui/Assets/Demo/*
-!/work/bonraffle_winui/Assets/Demo/*.png
+/Bon Raffle/bonraffle_winui/*
+!/Bon Raffle/bonraffle_winui/*.cs
+!/Bon Raffle/bonraffle_winui/*.xaml
+!/Bon Raffle/bonraffle_winui/*.csproj
+!/Bon Raffle/bonraffle_winui/*.manifest
+!/Bon Raffle/bonraffle_winui/*.appxmanifest
+!/Bon Raffle/bonraffle_winui/LICENSE.txt
+!/Bon Raffle/bonraffle_winui/ThirdPartyNotices.txt
+!/Bon Raffle/bonraffle_winui/Assets/
+/Bon Raffle/bonraffle_winui/Assets/*
+!/Bon Raffle/bonraffle_winui/Assets/LockScreenLogo.scale-200.png
+!/Bon Raffle/bonraffle_winui/Assets/Square150x150Logo.scale-200.png
+!/Bon Raffle/bonraffle_winui/Assets/Square44x44Logo.scale-200.png
+!/Bon Raffle/bonraffle_winui/Assets/Square44x44Logo.targetsize-24_altform-unplated.png
+!/Bon Raffle/bonraffle_winui/Assets/Square44x44Logo.targetsize-48_altform-lightunplated.png
+!/Bon Raffle/bonraffle_winui/Assets/StoreLogo.png
+!/Bon Raffle/bonraffle_winui/Assets/AppIcon.ico
+!/Bon Raffle/bonraffle_winui/Assets/logo-bon-raffle.png
+!/Bon Raffle/bonraffle_winui/Assets/background-bon-raffle.png
+!/Bon Raffle/bonraffle_winui/Assets/ApplIcation-bon-raffle.png
+!/Bon Raffle/bonraffle_winui/Assets/AvatarPlaceholder.png
+!/Bon Raffle/bonraffle_winui/Assets/Demo/
+/Bon Raffle/bonraffle_winui/Assets/Demo/*
+!/Bon Raffle/bonraffle_winui/Assets/Demo/*.png
 
-/work/bonraffle_macos/*
-!/work/bonraffle_macos/*.swift
-!/work/bonraffle_macos/*.plist
-!/work/bonraffle_macos/*.command
-!/work/bonraffle_macos/LICENSE.txt
-!/work/bonraffle_macos/Resources/
-/work/bonraffle_macos/Resources/*
-!/work/bonraffle_macos/Resources/background-bon-raffle.png
-!/work/bonraffle_macos/Resources/logo-bon-raffle.png
-!/work/bonraffle_macos/Resources/avatar-placeholder.png
-!/work/bonraffle_macos/Resources/ApplIcation-bon-raffle.png
-!/work/bonraffle_macos/Resources/Demo/
-/work/bonraffle_macos/Resources/Demo/*
-!/work/bonraffle_macos/Resources/Demo/*.png
+/Bon Raffle/bonraffle_macos/*
+!/Bon Raffle/bonraffle_macos/*.swift
+!/Bon Raffle/bonraffle_macos/*.plist
+!/Bon Raffle/bonraffle_macos/*.command
+!/Bon Raffle/bonraffle_macos/LICENSE.txt
+!/Bon Raffle/bonraffle_macos/Resources/
+/Bon Raffle/bonraffle_macos/Resources/*
+!/Bon Raffle/bonraffle_macos/Resources/background-bon-raffle.png
+!/Bon Raffle/bonraffle_macos/Resources/logo-bon-raffle.png
+!/Bon Raffle/bonraffle_macos/Resources/avatar-placeholder.png
+!/Bon Raffle/bonraffle_macos/Resources/ApplIcation-bon-raffle.png
+!/Bon Raffle/bonraffle_macos/Resources/Demo/
+/Bon Raffle/bonraffle_macos/Resources/Demo/*
+!/Bon Raffle/bonraffle_macos/Resources/Demo/*.png
