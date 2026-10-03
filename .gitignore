@@ -6,22 +6,12 @@
 !/LICENSE
 !/docs/
 !/Bon Raffle/
-!/site-source/
-!/scripts/
 !/.github/
 
 /.github/*
 !/.github/workflows/
 /.github/workflows/*
 !/.github/workflows/bon-raffle-pages.yml
-
-/site-source/*
-!/site-source/index.html
-!/site-source/style.css
-!/site-source/app.js
-
-/scripts/*
-!/scripts/build-site.mjs
 
 /docs/*
 !/docs/index.html
