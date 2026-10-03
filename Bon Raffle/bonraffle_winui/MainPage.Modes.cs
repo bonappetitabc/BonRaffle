@@ -124,6 +124,7 @@ public sealed partial class MainPage
         SpinButton.Content = _prizeMode ? "Разыграть приз" : "Выбрать победителя";
         WinnerHeading.Text = _prizeMode ? "Выпал приз!" : "Поздравляем с победой!";
         RemainingCaption.Text = _prizeMode ? _settings.PrizesCaption : _settings.ParticipantsCaption;
+        RemainingCaption.Visibility = string.IsNullOrEmpty(RemainingCaption.Text) ? Visibility.Collapsed : Visibility.Visible;
         HomeSubtitle.Text = _prizeMode
             ? "Попробуйте демонстрационные призы или создайте свой набор."
             : "Попробуйте демонстрационный список или загрузите свой.";

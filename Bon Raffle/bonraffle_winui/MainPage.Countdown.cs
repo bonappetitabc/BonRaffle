@@ -1,18 +1,22 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 
 namespace BonRaffle;
 
 public sealed partial class MainPage
 {
-    private readonly DispatcherTimer _countdownTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
-    private DateTimeOffset? _countdownDeadline;
-    private double _countdownRemaining;
-    private int _countdownConfiguredSeconds;
+    private readonly DispatcherTimer _introTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    private DateTimeOffset? _introDeadline;
+    private double _introRemaining;
+    private int _introTotal;
+    private bool _applyingCountdownSettings;
+    private bool _countdownReady;
 
     private void InitializeCountdown()
     {
-        _countdownTimer.Tick += async (_, _) => await TickCountdownAsync();
+        _introTimer.Tick += (_, _) => TickIntroCountdown();
     }
 
     private void PageRoot_SizeChanged(object sender, SizeChangedEventArgs e) => UpdateCountdownSize();
@@ -21,86 +25,129 @@ public sealed partial class MainPage
     {
         var height = PageRoot.ActualHeight;
         var width = PageRoot.ActualWidth;
-        var roomy = height >= 850 || (_settings.Fullscreen && height >= 720);
-        var diameter = roomy
-            ? Math.Clamp(Math.Min(width * 0.14, height * 0.19), 132, 156)
-            : 108;
-        CountdownViewbox.Width = diameter;
-        CountdownViewbox.Height = diameter;
+        var stageDiameter = Math.Clamp(Math.Min(width * 0.6, height * 0.59), 240, 440);
+        StageCountdownViewbox.Width = stageDiameter;
+        StageCountdownViewbox.Height = stageDiameter;
     }
 
     private void ApplyCountdownSettings()
     {
-        CountdownPanel.Visibility = _settings.ShowCountdown ? Visibility.Visible : Visibility.Collapsed;
-        CountdownCaptionText.Text = _settings.CountdownCaption;
         UpdateCountdownSize();
-        CountdownArc.Stroke = new SolidColorBrush(ParseColor(_settings.CountdownRingColor));
-        if (!_settings.ShowCountdown)
-        {
-            _countdownDeadline = null;
-            _countdownRemaining = _settings.CountdownSeconds;
-            _countdownTimer.Stop();
-        }
-        if (_countdownConfiguredSeconds != _settings.CountdownSeconds)
-        {
-            _countdownConfiguredSeconds = _settings.CountdownSeconds;
-            _countdownRemaining = _settings.CountdownSeconds;
-            _countdownDeadline = null;
-            _countdownTimer.Stop();
-        }
-        RenderCountdown();
+        StageCountdownArc.Stroke = new SolidColorBrush(ParseColor(_settings.CountdownRingColor));
+        StageCountdownCaption.Text = _settings.CountdownCaption;
+        StageCountdownCaption.Visibility = string.IsNullOrEmpty(_settings.CountdownCaption) ? Visibility.Collapsed : Visibility.Visible;
+        _applyingCountdownSettings = true;
+        HomeTimerToggle.IsOn = _settings.ShowIntroCountdown;
+        HomeTimerControls.Visibility = _settings.ShowIntroCountdown ? Visibility.Visible : Visibility.Collapsed;
+        HomeTimerMinutes.Value = _settings.CountdownSeconds / 60;
+        HomeTimerSeconds.Value = _settings.CountdownSeconds % 60;
+        _applyingCountdownSettings = false;
     }
 
-    private void Countdown_Click(object sender, RoutedEventArgs e)
+    private async void HomeTimerToggle_Toggled(object sender, RoutedEventArgs e)
     {
-        if (_countdownDeadline is not null)
-        {
-            _countdownRemaining = Math.Max(0, (_countdownDeadline.Value - DateTimeOffset.UtcNow).TotalSeconds);
-            _countdownDeadline = null;
-            _countdownTimer.Stop();
-        }
-        else
-        {
-            if (_countdownRemaining <= 0) _countdownRemaining = _countdownConfiguredSeconds;
-            _countdownDeadline = DateTimeOffset.UtcNow.AddSeconds(_countdownRemaining);
-            _countdownTimer.Start();
-        }
-        RenderCountdown();
+        if (!_countdownReady || _applyingCountdownSettings) return;
+        HomeTimerControls.Visibility = HomeTimerToggle.IsOn ? Visibility.Visible : Visibility.Collapsed;
+        _settings.ShowIntroCountdown = HomeTimerToggle.IsOn;
+        try { await RaffleData.SaveSettingsAsync(_settings); }
+        catch (Exception ex) { await ShowErrorAsync("Не удалось сохранить таймер", ex); }
     }
 
-    private async Task TickCountdownAsync()
+    private async void HomeTimerDuration_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
     {
-        if (_countdownDeadline is not null)
+        if (!_countdownReady || _applyingCountdownSettings || !TryReadHomeTimerDuration(out var total)) return;
+        _settings.CountdownSeconds = total;
+        try { await RaffleData.SaveSettingsAsync(_settings); }
+        catch (Exception ex) { await ShowErrorAsync("Не удалось сохранить время таймера", ex); }
+    }
+
+    private bool TryReadHomeTimerDuration(out int total)
+    {
+        total = 0;
+        var minutes = HomeTimerMinutes.Value;
+        var seconds = HomeTimerSeconds.Value;
+        if (!double.IsFinite(minutes) || !double.IsFinite(seconds) ||
+            minutes != Math.Truncate(minutes) || seconds != Math.Truncate(seconds) ||
+            minutes < 0 || minutes > 1440 || seconds < 0 || seconds > 59 ||
+            minutes * 60 + seconds is < 10 or > 86400) return false;
+        total = (int)(minutes * 60 + seconds);
+        return true;
+    }
+
+    private async void StartHomeTimer_Click(object sender, RoutedEventArgs e)
+    {
+        if (_spinning || _importOpening || !OpenRaffleButton.IsEnabled) return;
+        if (!TryReadHomeTimerDuration(out var total))
         {
-            _countdownRemaining = Math.Max(0, (_countdownDeadline.Value - DateTimeOffset.UtcNow).TotalSeconds);
-            if (_countdownRemaining <= 0)
+            await new ContentDialog
             {
-                _countdownDeadline = null;
-                _countdownTimer.Stop();
-                _settings.ShowCountdown = false;
-                ApplyCountdownSettings();
-                try { await RaffleData.SaveSettingsAsync(_settings); }
-                catch (Exception ex) { await ShowErrorAsync("Не удалось сохранить выключение таймера", ex); }
-                return;
-            }
+                XamlRoot = XamlRoot, Title = "Время таймера",
+                Content = "Укажите от 10 секунд до 24 часов.", CloseButtonText = "Понятно"
+            }.ShowAsync();
+            return;
         }
-        RenderCountdown();
+        _introTotal = total;
+        _introRemaining = _introTotal;
+        _settings.CountdownSeconds = _introTotal;
+        ApplyCountdownSettings();
+        try { await RaffleData.SaveSettingsAsync(_settings); }
+        catch (Exception ex) { await ShowErrorAsync("Не удалось сохранить время таймера", ex); }
+        _introDeadline = DateTimeOffset.UtcNow.AddSeconds(_introRemaining);
+        _introTimer.Start();
+        RenderIntroCountdown();
+        ShowView("timer");
     }
 
-    private void RenderCountdown()
+    private void StagePause_Click(object sender, RoutedEventArgs e)
     {
-        var seconds = (int)Math.Ceiling(_countdownRemaining);
-        CountdownTime.Text = $"{seconds / 3600:00}:{seconds / 60 % 60:00}:{seconds % 60:00}";
-        if (seconds < 3600) CountdownTime.Text = $"{seconds / 60:00}:{seconds % 60:00}";
-        CountdownAction.Text = _countdownDeadline is null ? "Запустить" : "Пауза";
+        if (_introDeadline is not null)
+        {
+            _introRemaining = Math.Max(0, (_introDeadline.Value - DateTimeOffset.UtcNow).TotalSeconds);
+            _introDeadline = null;
+            _introTimer.Stop();
+        }
+        else if (_introRemaining > 0)
+        {
+            _introDeadline = DateTimeOffset.UtcNow.AddSeconds(_introRemaining);
+            _introTimer.Start();
+        }
+        RenderIntroCountdown();
+    }
 
-        var ratio = Math.Clamp(_countdownRemaining / Math.Max(1, _countdownConfiguredSeconds), 0, 1);
-        const double circumferenceInStrokeWidths = 2 * Math.PI * 48 / 7;
-        CountdownArc.StrokeDashArray = new DoubleCollection
+    private void StageCountdownButton_PointerEntered(object sender, PointerRoutedEventArgs e)
+        => StageCountdownHoverHint.Opacity = 1;
+
+    private void StageCountdownButton_PointerExited(object sender, PointerRoutedEventArgs e)
+        => StageCountdownHoverHint.Opacity = 0;
+
+    private void TickIntroCountdown()
+    {
+        if (_introDeadline is null) return;
+        _introRemaining = Math.Max(0, (_introDeadline.Value - DateTimeOffset.UtcNow).TotalSeconds);
+        RenderIntroCountdown();
+        if (_introRemaining > 0) return;
+        _introTimer.Stop();
+        _introDeadline = null;
+        OpenRaffle_Click(StartHomeTimerButton, new RoutedEventArgs());
+    }
+
+    private void RenderIntroCountdown()
+    {
+        var seconds = (int)Math.Ceiling(_introRemaining);
+        var displayTime = seconds >= 3600
+            ? $"{seconds / 3600:00}:{seconds / 60 % 60:00}:{seconds % 60:00}"
+            : $"{seconds / 60:00}:{seconds % 60:00}";
+        if (StageCountdownTime.Text != displayTime) StageCountdownTime.Text = displayTime;
+        var ratio = Math.Clamp(_introRemaining / Math.Max(1, _introTotal), 0, 1);
+        const double circumferenceInStrokeWidths = 2 * Math.PI * 205 / 12;
+        StageCountdownArc.StrokeDashArray = new DoubleCollection
         {
             ratio * circumferenceInStrokeWidths,
             (1 - ratio) * circumferenceInStrokeWidths
         };
-        CountdownArc.Visibility = ratio <= 0 ? Visibility.Collapsed : Visibility.Visible;
+        StageCountdownArc.Visibility = ratio <= 0 ? Visibility.Collapsed : Visibility.Visible;
+        StageCountdownHintIcon.Symbol = _introDeadline is null ? Symbol.Play : Symbol.Pause;
+        StageCountdownHintText.Text = _introDeadline is null ? "Продолжить" : "Пауза";
+        StageCountdownHoverHint.Opacity = StageCountdownButton.IsPointerOver ? 1 : 0;
     }
 }

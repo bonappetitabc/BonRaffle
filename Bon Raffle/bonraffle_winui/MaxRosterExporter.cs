@@ -9,7 +9,8 @@ namespace BonRaffle;
 
 internal static class MaxConnection
 {
-    private const string Resource = "Bon Raffle MAX bot token";
+    private static string Resource => RaffleData.IsIsolatedPreview
+        ? "Bon Raffle MAX preview bot token" : "Bon Raffle MAX bot token";
     private const string Account = "bot";
 
     public static string? LoadToken()

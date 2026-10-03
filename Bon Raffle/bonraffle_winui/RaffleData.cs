@@ -44,7 +44,7 @@ public sealed class RaffleSettings
     [JsonPropertyName("show_remaining_header")] public bool ShowRemainingHeader { get; set; } = true;
     [JsonPropertyName("participants_caption")] public string ParticipantsCaption { get; set; } = "ЕЩЁ МОГУТ ВЫИГРАТЬ";
     [JsonPropertyName("prizes_caption")] public string PrizesCaption { get; set; } = "ДОСТУПНЫХ ВИДОВ ПРИЗОВ";
-    [JsonPropertyName("show_countdown")] public bool ShowCountdown { get; set; }
+    [JsonPropertyName("show_intro_countdown")] public bool ShowIntroCountdown { get; set; }
     [JsonPropertyName("countdown_seconds")] public int CountdownSeconds { get; set; } = 300;
     [JsonPropertyName("countdown_caption")] public string CountdownCaption { get; set; } = "Конкурс начнётся через";
     [JsonPropertyName("countdown_ring_color")] public string CountdownRingColor { get; set; } = "#D2691E";
@@ -99,7 +99,7 @@ public sealed class RaffleSettings
     private static string NormalizeCaption(string? value, string fallback)
     {
         var caption = value?.Trim();
-        return string.IsNullOrEmpty(caption) ? fallback : caption[..Math.Min(caption.Length, 200)];
+        return caption is null ? fallback : caption[..Math.Min(caption.Length, 200)];
     }
 }
 
@@ -111,16 +111,19 @@ public sealed class WinnerHistory
 
 public static class RaffleData
 {
+    private static readonly SemaphoreSlim SettingsSaveGate = new(1, 1);
+    public static bool IsIsolatedPreview => File.Exists(Path.Combine(AppContext.BaseDirectory, "preview-isolated.marker"));
     public static string DirectoryPath => Environment.GetEnvironmentVariable("MAX_RAFFLE_DATA_DIR")
         ?? Environment.GetEnvironmentVariable("SOFRINO_RAFFLE_DATA_DIR")
-        ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Settings");
+        ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            IsIsolatedPreview ? "BonRaffle-Max-Preview" : "Settings");
     public static string BackgroundPath => Path.Combine(DirectoryPath, "background.custom");
     public static string LogoPath => Path.Combine(DirectoryPath, "logo.custom");
     public static string AvatarPlaceholderPath => Path.Combine(DirectoryPath, "avatar-placeholder.custom");
 
     public static void MigrateLegacyData()
     {
-        if (Environment.GetEnvironmentVariable("MAX_RAFFLE_DATA_DIR") is not null
+        if (IsIsolatedPreview || Environment.GetEnvironmentVariable("MAX_RAFFLE_DATA_DIR") is not null
             || Environment.GetEnvironmentVariable("SOFRINO_RAFFLE_DATA_DIR") is not null) return;
         var old = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SofrinoRaffle");
         MigrateLegacyDataFrom(old, DirectoryPath);
@@ -187,7 +190,12 @@ public static class RaffleData
     }
 
     public static Task SaveMembersAsync(List<Member> members) => WriteJsonAsync("members.json", members);
-    public static Task SaveSettingsAsync(RaffleSettings settings) => WriteJsonAsync("settings.json", settings);
+    public static async Task SaveSettingsAsync(RaffleSettings settings)
+    {
+        await SettingsSaveGate.WaitAsync();
+        try { await WriteJsonAsync("settings.json", settings); }
+        finally { SettingsSaveGate.Release(); }
+    }
 
     private static async Task WriteJsonAsync<T>(string name, T value)
     {

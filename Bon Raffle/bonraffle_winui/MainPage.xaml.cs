@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -17,6 +18,9 @@ namespace BonRaffle;
 
 public sealed partial class MainPage : Page
 {
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+    private static extern nint SetWindowLongPtrW(nint window, int index, nint value);
+
     private readonly List<Border> _slotBorders = [];
     private readonly List<TextBlock> _slotNames = [];
     private readonly List<Image> _slotImages = [];
@@ -67,7 +71,7 @@ public sealed partial class MainPage : Page
         Unloaded += (_, _) =>
         {
             StopRendering();
-            _countdownTimer.Stop();
+            _introTimer.Stop();
             foreach (var layer in _layerAnimations.Keys.ToArray()) StopLayerAnimation(layer);
             _winnerEntranceAnimation?.Stop();
         };
@@ -90,6 +94,7 @@ public sealed partial class MainPage : Page
                 FileStatus.Text = $"Свой список «{activeManual.Name}»";
             await RestoreRaffleModeAsync();
             ApplySettings();
+            _countdownReady = true;
             UpdateCount();
             FocusPrimaryAction();
             if (_members.Count > 0) _avatarFiles.StartBatch(_members.Select(m => m.Avatar));
@@ -108,6 +113,7 @@ public sealed partial class MainPage : Page
             MemberCount.Text = $"{available:N0} видов призов";
             RaffleCount.Text = available.ToString("N0", new CultureInfo("ru-RU"));
             OpenRaffleButton.IsEnabled = available > 0;
+            StartHomeTimerButton.IsEnabled = available > 0;
             AgainButton.IsEnabled = available > 0;
             AgainButton.Content = available > 0 ? "Разыграть ещё один приз" : "Призы закончились";
             FileStatus.Text = available > 0
@@ -120,6 +126,7 @@ public sealed partial class MainPage : Page
         MemberCount.Text = $"{count} участников";
         RaffleCount.Text = (_members.Count - _winnerIds.Count).ToString("N0", new System.Globalization.CultureInfo("ru-RU"));
         OpenRaffleButton.IsEnabled = _members.Count > _winnerIds.Count;
+        StartHomeTimerButton.IsEnabled = OpenRaffleButton.IsEnabled;
         AgainButton.IsEnabled = _members.Count > _winnerIds.Count;
         AgainButton.Content = AgainButton.IsEnabled ? "Провести ещё один розыгрыш" : "Все участники выиграли";
         if (_members.Count > 0)
@@ -600,10 +607,16 @@ public sealed partial class MainPage : Page
 
     private void ShowView(string view)
     {
+        if (view != "timer" && CountdownStage.Visibility == Visibility.Visible)
+        {
+            _introTimer.Stop();
+            _introDeadline = null;
+        }
         var wasVisible = view switch
         {
             "home" => HomeView.Visibility == Visibility.Visible,
             "raffle" => RaffleView.Visibility == Visibility.Visible,
+            "timer" => CountdownStage.Visibility == Visibility.Visible,
             "winner" => WinnerView.Visibility == Visibility.Visible,
             _ => false
         };
@@ -611,10 +624,12 @@ public sealed partial class MainPage : Page
         HomeView.Visibility = view == "home" ? Visibility.Visible : Visibility.Collapsed;
         if (view == "home") _ = NotifyUpdateAsync();
         RaffleView.Visibility = view == "raffle" ? Visibility.Visible : Visibility.Collapsed;
+        CountdownStage.Visibility = view == "timer" ? Visibility.Visible : Visibility.Collapsed;
         WinnerView.Visibility = view == "winner" ? Visibility.Visible : Visibility.Collapsed;
         _raffleActive = view == "raffle";
         if (!_settings.ReduceEffects && !wasVisible)
-            FadeIn(view == "home" ? HomeView : view == "raffle" ? RaffleView : WinnerView);
+            FadeIn(view == "home" ? HomeView : view == "raffle" ? RaffleView :
+                view == "timer" ? CountdownStage : WinnerView);
         if (_raffleActive) StartRendering();
         if (!wasVisible) FocusPrimaryAction();
     }
@@ -624,7 +639,9 @@ public sealed partial class MainPage : Page
         DispatcherQueue.TryEnqueue(() =>
         {
             if (_settingsOpening || _spinning) return;
-            Button? target = HomeView.Visibility == Visibility.Visible ? OpenRaffleButton :
+            Button? target = CountdownStage.Visibility == Visibility.Visible ? StageCountdownButton :
+                HomeView.Visibility == Visibility.Visible && HomeTimerToggle.IsOn ? StartHomeTimerButton :
+                HomeView.Visibility == Visibility.Visible ? OpenRaffleButton :
                 RaffleView.Visibility == Visibility.Visible ? SpinButton :
                 WinnerView.Visibility == Visibility.Visible ? AgainButton : null;
             if (target is { IsEnabled: true }) target.Focus(FocusState.Programmatic);
@@ -1418,6 +1435,12 @@ public sealed partial class MainPage : Page
         _settingsOpening = true;
         try
         {
+        if (HomeView.Visibility == Visibility.Visible && TryReadHomeTimerDuration(out var timerSeconds)
+            && _settings.CountdownSeconds != timerSeconds)
+        {
+            _settings.CountdownSeconds = timerSeconds;
+            await RaffleData.SaveSettingsAsync(_settings);
+        }
         var cacheBytes = await Task.Run(() => _avatarFiles.SizeBytes);
         StopRendering();
         var fullscreen = new ToggleSwitch { Header = "Во весь экран при запуске", IsOn = _settings.Fullscreen };
@@ -1447,23 +1470,20 @@ public sealed partial class MainPage : Page
         var prizesCaption = new TextBox { Header = "Подпись над барабаном · призы", Text = _settings.PrizesCaption,
             MaxLength = 200, Width = 620, HorizontalAlignment = HorizontalAlignment.Left,
             TextWrapping = TextWrapping.Wrap, AcceptsReturn = false };
-        var showCountdown = new ToggleSwitch { Header = "Показывать таймер над барабаном", IsOn = _settings.ShowCountdown };
-        var countdownMinutes = new NumberBox { Header = "Длительность таймера, минуты", Minimum = 1, Maximum = 1440,
-            SmallChange = 1, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
-            Value = Math.Max(1, _settings.CountdownSeconds / 60), Width = 180,
-            HorizontalAlignment = HorizontalAlignment.Left };
         var countdownCaption = new TextBox { Header = "Текст над таймером", Text = _settings.CountdownCaption,
             MaxLength = 200, Width = 620, HorizontalAlignment = HorizontalAlignment.Left,
             TextWrapping = TextWrapping.Wrap, AcceptsReturn = false };
         var countdownRingColor = new ColorPicker { Color = ParseColor(_settings.CountdownRingColor), IsAlphaEnabled = false,
             ColorSpectrumComponents = ColorSpectrumComponents.SaturationValue };
-        var countdownHint = new TextBlock { Text = "Подпись — до 200 символов. Нажмите на круг над барабаном, чтобы запустить или приостановить отсчёт. При нуле таймер сразу скроется и выключится.",
+        var countdownHint = new TextBlock { Text = "Таймер запускается с главной. Подпись — до 200 символов; оставьте поле пустым, чтобы её скрыть. Нажмите на большой круг, чтобы приостановить или продолжить отсчёт.",
             TextWrapping = TextWrapping.Wrap, Opacity = 0.8 };
         var winnerEffect = new ComboBox { Header = "Анимация победы", Width = 360, HorizontalAlignment = HorizontalAlignment.Left };
         winnerEffect.Items.Add("Шарики"); winnerEffect.Items.Add("Конфетти-салют");
         winnerEffect.Items.Add("Звёздный дождь"); winnerEffect.Items.Add("Случайный при каждой победе");
         winnerEffect.SelectedIndex = _settings.WinnerEffect switch { "stars" => 1, "sparks" => 2, "random" => 3, _ => 0 };
-        var effectPreview = new Canvas { Width = 260, Height = 110, Background = new SolidColorBrush(Color.FromArgb(170, 10, 21, 35)) };
+        var effectPreview = new Canvas { Width = 260, Height = 110,
+            Background = new SolidColorBrush(Color.FromArgb(170, 10, 21, 35)),
+            Clip = new RectangleGeometry { Rect = new Windows.Foundation.Rect(0, 0, 260, 110) } };
         var previewButton = new Button { Content = "Показать пример" };
         var effectPreviewRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         effectPreviewRow.Children.Add(effectPreview);
@@ -1653,8 +1673,6 @@ public sealed partial class MainPage : Page
             showRemaining.IsOn = true;
             participantsCaption.Text = "ЕЩЁ МОГУТ ВЫИГРАТЬ";
             prizesCaption.Text = "ДОСТУПНЫХ ВИДОВ ПРИЗОВ";
-            showCountdown.IsOn = false;
-            countdownMinutes.Value = 5;
             countdownCaption.Text = "Конкурс начнётся через";
             countdownRingColor.Color = ParseColor("#D2691E");
             winnerEffect.SelectedIndex = 0;
@@ -1684,8 +1702,7 @@ public sealed partial class MainPage : Page
         rafflePanel.Children.Add(prizesCaption);
         rafflePanel.Children.Add(new TextBlock { Text = "Подписи участников и призов — до 200 символов каждая.",
             TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
-        rafflePanel.Children.Add(showCountdown);
-        rafflePanel.Children.Add(countdownMinutes);
+        rafflePanel.Children.Add(new TextBlock { Text = "Таймер перед розыгрышем", FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
         rafflePanel.Children.Add(countdownCaption);
         rafflePanel.Children.Add(ColorSettingButton("Цвет кольца таймера", countdownRingColor));
         rafflePanel.Children.Add(countdownHint);
@@ -1914,6 +1931,8 @@ public sealed partial class MainPage : Page
         pickAvatarPlaceholderButton.Click += (_, _) => { pickAvatarPlaceholderRequested = true; Finish(true); };
         pickBackgroundButton.Click += (_, _) => { pickBackgroundRequested = true; Finish(true); };
         settingsWindow = new Window { Title = "Настройки — Bon Raffle", Content = settingsOverlay };
+        SetWindowLongPtrW(WinRT.Interop.WindowNative.GetWindowHandle(settingsWindow), -8,
+            WinRT.Interop.WindowNative.GetWindowHandle(MainWindow.Instance));
         settingsWindow.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
         var mainBounds = MainWindow.Instance.AppWindow;
         const int settingsWidth = 1060;
@@ -1950,9 +1969,6 @@ public sealed partial class MainPage : Page
             _settings.ShowRemainingHeader = showRemaining.IsOn;
             _settings.ParticipantsCaption = participantsCaption.Text;
             _settings.PrizesCaption = prizesCaption.Text;
-            _settings.ShowCountdown = showCountdown.IsOn;
-            _settings.CountdownSeconds = double.IsFinite(countdownMinutes.Value)
-                ? (int)Math.Round(countdownMinutes.Value) * 60 : 300;
             _settings.CountdownCaption = countdownCaption.Text;
             _settings.CountdownRingColor = Hex(countdownRingColor.Color);
             _settings.DrumColor = Hex(drumColor.Color);
@@ -2060,6 +2076,7 @@ public sealed partial class MainPage : Page
             homeColor.R, homeColor.G, homeColor.B));
         RemainingHeader.Visibility = _settings.ShowRemainingHeader ? Visibility.Visible : Visibility.Collapsed;
         RemainingCaption.Text = _prizeMode ? _settings.PrizesCaption : _settings.ParticipantsCaption;
+        RemainingCaption.Visibility = string.IsNullOrEmpty(RemainingCaption.Text) ? Visibility.Collapsed : Visibility.Visible;
         ApplyCountdownSettings();
         var drum = ParseColor(_settings.DrumColor);
         DrumBorder.Background = new SolidColorBrush(Color.FromArgb((byte)(_settings.DrumOpacity * 255), drum.R, drum.G, drum.B));
@@ -2109,12 +2126,19 @@ public sealed partial class MainPage : Page
         // Handle Enter before the focused navigation button receives it.
         e.Handled = true;
         var action = HomeView.Visibility == Visibility.Visible ? "home" :
+            CountdownStage.Visibility == Visibility.Visible ? "timer" :
             RaffleView.Visibility == Visibility.Visible ? "raffle" :
             WinnerView.Visibility == Visibility.Visible ? "winner" : "";
         DispatcherQueue.TryEnqueue(() =>
         {
             if (_spinning) return;
-            if (action == "home" && HomeView.Visibility == Visibility.Visible && OpenRaffleButton.IsEnabled)
+            if (action == "home" && HomeView.Visibility == Visibility.Visible &&
+                HomeTimerToggle.IsOn && StartHomeTimerButton.IsEnabled)
+            {
+                StartHomeTimerButton.Focus(FocusState.Programmatic);
+                StartHomeTimer_Click(StartHomeTimerButton, new RoutedEventArgs());
+            }
+            else if (action == "home" && HomeView.Visibility == Visibility.Visible && OpenRaffleButton.IsEnabled)
             {
                 OpenRaffleButton.Focus(FocusState.Programmatic);
                 OpenRaffle_Click(OpenRaffleButton, new RoutedEventArgs());
@@ -2123,6 +2147,11 @@ public sealed partial class MainPage : Page
             {
                 SpinButton.Focus(FocusState.Programmatic);
                 Spin_Click(SpinButton, new RoutedEventArgs());
+            }
+            else if (action == "timer" && CountdownStage.Visibility == Visibility.Visible)
+            {
+                StageCountdownButton.Focus(FocusState.Programmatic);
+                StagePause_Click(StageCountdownButton, new RoutedEventArgs());
             }
             else if (action == "winner" && WinnerView.Visibility == Visibility.Visible && AgainButton.IsEnabled)
             {

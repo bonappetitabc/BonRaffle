@@ -53,6 +53,16 @@
                             <Button x:Name="ManualListButton" Content="Создать свой список" Click="ManualList_Click" HorizontalAlignment="Center" MinWidth="190" MinHeight="34" />
                             <Button x:Name="PrizeListButton" Content="Создать или изменить призы" Click="PrizeRaffle_Click" HorizontalAlignment="Center" MinWidth="190" MinHeight="34" />
                             <Button x:Name="MaxExportButton" Content="Выгрузить участников из MAX" Click="MaxExport_Click" HorizontalAlignment="Center" MinWidth="190" MinHeight="34" />
+                            <ToggleSwitch x:Name="HomeTimerToggle" Header="Таймер перед розыгрышем" Toggled="HomeTimerToggle_Toggled" HorizontalAlignment="Center" />
+                            <Border x:Name="HomeTimerControls" Visibility="Collapsed" Background="#33172830" CornerRadius="12" Padding="16" HorizontalAlignment="Center">
+                                <StackPanel Spacing="12" HorizontalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                                        <NumberBox x:Name="HomeTimerMinutes" Header="Минуты" Value="5" Minimum="0" Maximum="1440" SmallChange="1" SpinButtonPlacementMode="Inline" Width="165" ValueChanged="HomeTimerDuration_ValueChanged" />
+                                        <NumberBox x:Name="HomeTimerSeconds" Header="Секунды" Value="0" Minimum="0" Maximum="59" SmallChange="1" SpinButtonPlacementMode="Inline" Width="165" ValueChanged="HomeTimerDuration_ValueChanged" />
+                                    </StackPanel>
+                                    <Button x:Name="StartHomeTimerButton" Content="Запустить таймер" Click="StartHomeTimer_Click" HorizontalAlignment="Stretch" MinHeight="38" IsEnabled="False" Background="#D2691E" Foreground="White" CornerRadius="6" BorderThickness="0" />
+                                </StackPanel>
+                            </Border>
                             <Button x:Name="OpenRaffleButton" Content="Открыть розыгрыш" Click="OpenRaffle_Click" UseSystemFocusVisuals="False" HorizontalAlignment="Center" MinWidth="190" MinHeight="38" IsEnabled="False" Background="#D2691E" Foreground="White" CornerRadius="6" BorderThickness="0">
                                 <Button.Resources>
                                     <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#D2691E" />
@@ -69,23 +79,6 @@
             </ScrollViewer>
             <ScrollViewer x:Name="RaffleView" Grid.Row="1" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" Padding="0,100,0,12">
-                    <StackPanel x:Name="CountdownPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-                        <TextBlock x:Name="CountdownCaptionText" Text="Конкурс начнётся через" Foreground="#D3E4D7" FontSize="16" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="440" />
-                        <Viewbox x:Name="CountdownViewbox" Width="108" Height="108" Stretch="Uniform" HorizontalAlignment="Center">
-                        <Grid Width="108" Height="108">
-                            <Ellipse Width="96" Height="96" Stroke="#557D94A7" StrokeThickness="7" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            <Ellipse x:Name="CountdownArc" Width="96" Height="96" Stroke="#D2691E" StrokeThickness="7" StrokeDashCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
-                                <Ellipse.RenderTransform><RotateTransform Angle="-90" /></Ellipse.RenderTransform>
-                            </Ellipse>
-                            <Button x:Name="CountdownButton" Click="Countdown_Click" UseSystemFocusVisuals="False" Width="86" Height="86" CornerRadius="43" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#AA102335" BorderThickness="0">
-                                <StackPanel HorizontalAlignment="Center" Spacing="3">
-                                    <TextBlock x:Name="CountdownTime" Text="05:00" FontSize="22" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" />
-                                    <TextBlock x:Name="CountdownAction" Text="Запустить" FontSize="10" TextAlignment="Center" HorizontalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-                        </Viewbox>
-                    </StackPanel>
                     <StackPanel x:Name="RemainingHeader" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
                         <TextBlock x:Name="RaffleCount" FontSize="36" FontWeight="Bold" Foreground="White" TextAlignment="Center" />
                         <TextBlock x:Name="RemainingCaption" Text="ЕЩЁ МОГУТ ВЫИГРАТЬ" Foreground="#D0DDD1" FontSize="12" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="440" />
@@ -115,6 +108,38 @@
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
+            <Grid x:Name="CountdownStage" Grid.Row="1" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Padding="12">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
+                    <TextBlock x:Name="StageCountdownCaption" Text="Конкурс начнётся через" FontSize="30" FontWeight="SemiBold" Foreground="White" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="620" />
+                    <Viewbox x:Name="StageCountdownViewbox" Width="440" Height="440" Stretch="Uniform" HorizontalAlignment="Center">
+                        <Grid Width="440" Height="440">
+                            <Ellipse Width="410" Height="410" Stroke="#557D94A7" StrokeThickness="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Ellipse x:Name="StageCountdownArc" Width="410" Height="410" Stroke="#D2691E" StrokeThickness="12" StrokeDashCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform><RotateTransform Angle="-90" /></Ellipse.RenderTransform>
+                            </Ellipse>
+                            <Button x:Name="StageCountdownButton" Click="StagePause_Click" PointerEntered="StageCountdownButton_PointerEntered" PointerExited="StageCountdownButton_PointerExited"
+                                    AutomationProperties.Name="Приостановить или продолжить таймер" UseSystemFocusVisuals="False"
+                                    Width="390" Height="390" CornerRadius="195" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#01000000" BorderThickness="0" Padding="0">
+                                <Button.Resources>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#18102335" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#30102335" />
+                                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent" />
+                                </Button.Resources>
+                                <Grid Width="350" Height="180">
+                                    <TextBlock x:Name="StageCountdownTime" Text="05:00" FontSize="80" FontWeight="Bold" Foreground="White" TextAlignment="Center" VerticalAlignment="Center" />
+                                    <Border x:Name="StageCountdownHoverHint" Opacity="0" IsHitTestVisible="False" Background="#E5D2691E" CornerRadius="20" Padding="14,7" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <SymbolIcon x:Name="StageCountdownHintIcon" Symbol="Pause" Foreground="White" Width="20" Height="20" />
+                                            <TextBlock x:Name="StageCountdownHintText" Text="Пауза" FontSize="18" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Button>
+                        </Grid>
+                    </Viewbox>
+                </StackPanel>
+            </Grid>
             <Grid x:Name="WinnerView" Grid.Row="1" Visibility="Collapsed">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
@@ -170,7 +195,7 @@
                 </Button>
             </Grid>
         </Grid>
-        <Button x:Name="AvatarStatusButton" Click="AvatarStatus_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="24" Width="44" Height="44" CornerRadius="22" Background="#BB000000" Foreground="White" Padding="0" Visibility="Collapsed">
+        <Button x:Name="AvatarStatusButton" Click="AvatarStatus_Click" IsTabStop="False" AllowFocusOnInteraction="False" UseSystemFocusVisuals="False" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="24" Width="44" Height="44" CornerRadius="22" Background="#BB000000" Foreground="White" Padding="0" Visibility="Collapsed">
             <Grid Width="36" Height="36">
                 <Ellipse Stroke="#77F3DCA7" StrokeThickness="3" />
                 <Path x:Name="AvatarProgressArc" Stroke="#F5C978" StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
