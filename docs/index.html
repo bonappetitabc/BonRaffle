@@ -8,7 +8,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Bon Raffle — розыгрыш, за которым интересно наблюдать">
   <meta property="og:description" content="Проводите розыгрыши на Windows и macOS. Настройте экран, загрузите участников и выберите победителя.">
-  <meta property="og:image" content="https://bonappetitabc.github.io/BonRaffle/screenshots/home-timer-windows.png">
+  <meta property="og:image" content="https://bonappetitabc.github.io/BonRaffle/screenshots/drum-participants-windows.png">
   <link rel="canonical" href="https://bonappetitabc.github.io/BonRaffle/">
   <link rel="icon" type="image/png" href="site/app-icon.png">
   <link rel="stylesheet" href="site/style.css">
@@ -24,7 +24,6 @@
       </a>
       <nav aria-label="Основная навигация">
         <a href="#features">Возможности</a>
-        <a href="#gallery">Скриншоты</a>
         <a class="nav-download" href="#download">Скачать</a>
       </nav>
     </div>
@@ -35,18 +34,16 @@
       <div class="hero-glow" aria-hidden="true"></div>
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <img class="hero-icon" src="site/app-icon.png" width="94" height="94" alt="">
           <div class="eyebrow">Приложение для Windows и macOS</div>
-          <h1 id="hero-title">Bon Raffle</h1>
+          <div class="hero-brandline"><img class="hero-icon" src="site/app-icon.png" width="86" height="86" alt=""><h1 id="hero-title">Bon Raffle</h1></div>
           <p class="hero-tagline">Розыгрыш, за которым интересно наблюдать.</p>
-          <p class="hero-lead">Bon Raffle помогает провести конкурс от первого участника до объявления победителя. Подготовьте список, оформите экран и запустите розыгрыш.</p>
+          <p class="hero-lead">Списки участников и призов, таймер перед стартом и оформление под ваше событие.</p>
           <div class="hero-actions">
             <a class="button button-primary" href="#download">Скачать Bon Raffle</a>
-            <a class="button button-ghost" href="#gallery">Посмотреть приложение</a>
+            <a class="button button-ghost" href="#preview">Посмотреть приложение</a>
           </div>
-          <p class="hero-note">Бесплатное приложение с открытым исходным кодом.</p>
         </div>
-        <div class="hero-showcase">
+        <div class="hero-showcase" id="preview">
           <div class="showcase-header">
             <div class="showcase-label">Розыгрыш участников</div>
             <div class="platform-tabs" role="group" aria-label="Платформа главного скриншота">
@@ -63,51 +60,29 @@
 
     <section class="section intro-section" id="features" aria-labelledby="features-title">
       <div class="wrap">
-        <div class="section-heading">
-          <div><p class="section-kicker">ВСЁ ДЛЯ РОЗЫГРЫША</p><h2 id="features-title">От списка до победителя</h2></div>
-          <p>Проведите розыгрыш среди людей, столиков или призов — и покажите каждый этап на большом экране.</p>
-        </div>
+        <div class="section-heading"><h2 id="features-title">Возможности</h2></div>
         <div class="feature-grid">
-          <article class="feature-card"><span class="feature-number">01</span><h3>Участники и призы</h3><p>Создайте список, загрузите CSV или выгрузите участников из MAX. Для призов задайте количество и шанс.</p></article>
-          <article class="feature-card"><span class="feature-number">02</span><h3>Таймер перед стартом</h3><p>Задайте минуты и секунды на главной. По окончании отсчёта откроется экран розыгрыша.</p></article>
-          <article class="feature-card"><span class="feature-number">03</span><h3>Ваше оформление</h3><p>Выберите фон, цвета, подписи и изображения, чтобы экран подходил событию или трансляции.</p></article>
+          <article class="feature-card"><h3>Участники и призы</h3><p>Создайте список, загрузите CSV или выгрузите участников из MAX. Для призов задайте количество и шанс.</p></article>
+          <article class="feature-card"><h3>Таймер перед стартом</h3><p>Задайте минуты и секунды на главной. По окончании отсчёта откроется экран розыгрыша.</p></article>
+          <article class="feature-card"><h3>Ваше оформление</h3><p>Выберите фон, цвета, подписи и изображения для события или трансляции.</p></article>
         </div>
-      </div>
-    </section>
-
-    <section class="section gallery-section" id="gallery" aria-labelledby="gallery-title">
-      <div class="wrap">
-        <div class="section-heading gallery-heading">
-          <div><p class="section-kicker">ПОСМОТРИТЕ САМИ</p><h2 id="gallery-title">Выглядит как событие</h2></div>
-          <div class="platform-tabs" role="group" aria-label="Платформа скриншотов">
-            <button type="button" class="platform-tab is-active" data-platform="windows" aria-pressed="true">Windows</button>
-            <button type="button" class="platform-tab" data-platform="macos" aria-pressed="false">macOS</button>
-          </div>
-        </div>
-        <div class="gallery-grid">
-          <figure class="gallery-card gallery-card-wide"><img src="screenshots/home-timer-windows.png" data-windows="screenshots/home-timer-windows.png" data-macos="screenshots/home-timer-macos.png" data-label="Главный экран и настройка таймера" width="1919" height="1079" loading="lazy" alt="Главный экран и настройка таймера на Windows"><figcaption><span>01 / ГЛАВНАЯ</span><strong>Всё готово к старту</strong></figcaption></figure>
-          <figure class="gallery-card"><img src="screenshots/drum-participants-windows.png" data-windows="screenshots/drum-participants-windows.png" data-macos="screenshots/drum-participants-macos.png" data-label="Барабан участников" width="1919" height="1079" loading="lazy" alt="Барабан участников на Windows"><figcaption><span>02 / РОЗЫГРЫШ</span><strong>Момент выбора</strong></figcaption></figure>
-          <figure class="gallery-card"><img src="screenshots/countdown-windows.png" data-windows="screenshots/countdown-windows.png" data-macos="screenshots/countdown-macos.png" data-label="Отсчёт перед розыгрышем" width="1919" height="1079" loading="lazy" alt="Отсчёт перед розыгрышем на Windows"><figcaption><span>03 / ТАЙМЕР</span><strong>Минута ожидания</strong></figcaption></figure>
-        </div>
-        <p class="gallery-note">На снимках показаны демонстрационные данные.</p>
       </div>
     </section>
 
     <section class="section download-section" id="download" aria-labelledby="download-title">
       <div class="wrap download-inner">
-        <p class="section-kicker">НАЧАТЬ ПРОСТО</p>
-        <h2 id="download-title">Пора выбрать победителя</h2>
-        <p class="download-lead">Скачайте Bon Raffle для своей системы. Текущий выпуск — 2.3.4.</p>
+        <h2 id="download-title">Скачать Bon Raffle</h2>
+        <p class="download-lead">Версия 2.3.4 для Windows и macOS.</p>
         <div class="download-grid">
           <a class="download-card" href="https://github.com/bonappetitabc/BonRaffle/releases/download/v2.3.4/Bon-Raffle-Setup-2.3.4.exe"><span class="download-os">Windows</span><strong>Скачать установщик</strong><small>Windows 10/11 · x64 · EXE</small></a>
           <a class="download-card" href="https://github.com/bonappetitabc/BonRaffle/releases/download/v2.3.4/BonRaffle-macOS15-plus-2.3.4.dmg"><span class="download-os">macOS</span><strong>Скачать образ</strong><small>macOS 15+ · DMG</small></a>
         </div>
-        <p class="download-footnote">Все выпуски и исходный код доступны на <a href="https://github.com/bonappetitabc/BonRaffle">GitHub</a>.</p>
+        <p class="download-footnote">Остальные скриншоты, все выпуски и исходный код — в <a href="https://github.com/bonappetitabc/BonRaffle">репозитории</a>.</p>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Bon Raffle · MIT</span><span>Сделано для Windows и macOS</span><a href="https://github.com/bonappetitabc/BonRaffle">Исходный код</a></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Bon Raffle · Бесплатное приложение с открытым исходным кодом · MIT</span><a href="https://github.com/bonappetitabc/BonRaffle">Исходный код</a></div></footer>
   <script src="site/app.js" defer></script>
 </body>
 </html>
