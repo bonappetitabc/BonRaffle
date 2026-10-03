@@ -52,11 +52,18 @@ h1 { margin: 0; font-size: clamp(58px, 6vw, 80px); line-height: 1.04; letter-spa
 .button-primary:hover { background: linear-gradient(135deg, #ffc17f, #fa8536); }
 .button-ghost { border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.04); }
 .button-ghost:hover { border-color: var(--orange-light); background: rgba(244,122,34,.08); }
-.hero-showcase { width: min(100%, 880px); min-width: 0; }
-.showcase-header { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 14px; }
+.hero-showcase { width: min(100%, 1050px); min-width: 0; }
+.showcase-header { display: flex; width: 84%; margin: 0 auto 14px; justify-content: space-between; align-items: center; gap: 18px; }
 .showcase-label { color: #b9b9b9; font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-.app-window { display: grid; place-items: center; overflow: hidden; aspect-ratio: 16 / 10; border: 1px solid rgba(255,255,255,.18); border-radius: 17px; background: #111; box-shadow: 0 38px 85px rgba(0,0,0,.55); }
-.app-window img { width: 100%; height: 100%; object-fit: contain; }
+.showcase-stage { position: relative; isolation: isolate; }
+.showcase-peek { position: absolute; z-index: -1; top: 7%; bottom: 7%; width: 30%; overflow: hidden; border: 1px solid rgba(255,255,255,.12); border-radius: 18px; background: #111; filter: brightness(.8); pointer-events: none; }
+.showcase-peek-left { left: 1%; transform: rotate(-3deg); }
+.showcase-peek-right { right: 1%; transform: rotate(3deg); }
+.showcase-peek img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.showcase-peek-left img { object-position: 80% center; }
+.showcase-peek-right img { object-position: 20% center; }
+.app-window { position: relative; display: grid; place-items: center; width: 84%; margin-inline: auto; overflow: hidden; aspect-ratio: 16 / 9; border: 1px solid rgba(255,255,255,.18); border-radius: 17px; background: #111; box-shadow: 0 38px 85px rgba(0,0,0,.55); }
+.app-window img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 
 .section { padding-block: 112px; }
 .intro-section { background: #0e0e0e; }
@@ -108,6 +115,8 @@ h2 { margin-bottom: 0; font-size: clamp(34px, 3.6vw, 50px); line-height: 1.12; l
   .hero-icon { width: 55px; height: 55px; border-radius: 14px; }
   h1 { font-size: clamp(42px, 12vw, 58px); }
   .hero-lead { font-size: 15px; }
+  .showcase-header, .app-window { width: 100%; }
+  .showcase-peek { display: none; }
   .showcase-header { flex-wrap: wrap; }
   .section { padding-block: 75px; }
   .section-heading { display: block; }

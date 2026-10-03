@@ -12,7 +12,9 @@ function selectPlatform(platform) {
 
     for (const image of platformImages) {
       image.src = image.dataset[platform];
-      image.alt = `${image.dataset.label} на ${platformName}`;
+      if (image.dataset.label) {
+        image.alt = `${image.dataset.label} на ${platformName}`;
+      }
     }
 }
 
