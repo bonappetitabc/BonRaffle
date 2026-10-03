@@ -7,7 +7,7 @@
 *Bon Raffle is a raffle app for Windows and macOS with participant lists, weighted prizes and messenger MAX roster export.*
 
 <p align="center">
-  <a href="https://bonappetitabc.github.io/BonRaffle/">Сайт Bon Raffle</a> · <a href="https://github.com/bonappetitabc/BonRaffle/releases/latest">Скачать последнюю версию</a>
+  <a href="https://bonappetitabc.github.io/BonRaffle/">Website</a> · <a href="https://github.com/bonappetitabc/BonRaffle/releases/latest">Releases</a>
 </p>
 
 ## Как выглядит
