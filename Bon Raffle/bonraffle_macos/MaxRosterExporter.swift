@@ -2,7 +2,9 @@ import Foundation
 import Security
 
 enum MaxConnection {
-    #if BON_RAFFLE_UPDATE_TEST
+    #if BON_RAFFLE_PREVIEW
+    private static let service = "com.bonraffle.preview.max"
+    #elseif BON_RAFFLE_UPDATE_TEST
     private static let service = "com.bonraffle.updatetest.max"
     #else
     private static let service = "com.bonraffle.app.max"

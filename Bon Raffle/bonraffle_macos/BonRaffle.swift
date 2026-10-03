@@ -70,6 +70,33 @@ private struct ColoredSurface: ViewModifier {
     }
 }
 
+private struct CountdownCircleSurface: ViewModifier {
+    let glassEnabled: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+#if HAS_LIQUID_GLASS
+        if #available(macOS 26.0, *), glassEnabled {
+            content.background {
+                Color.clear.glassEffect(.regular, in: Circle()).allowsHitTesting(false)
+            }
+        } else {
+            content.background(Color.black.opacity(0.16), in: Circle())
+        }
+#else
+        content.background(Color.black.opacity(0.16), in: Circle())
+#endif
+    }
+}
+
+private struct DefaultActionWhen: ViewModifier {
+    let enabled: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if enabled { content.keyboardShortcut(.defaultAction) }
+        else { content }
+    }
+}
+
 @MainActor
 final class AvatarCache: ObservableObject {
     @Published private(set) var images: [String: NSImage] = [:]
@@ -330,8 +357,8 @@ struct RaffleAppearance: Codable {
     }
 
     private static func caption(_ value: String?, fallback: String) -> String {
-        let cleaned = (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        return cleaned.isEmpty ? fallback : String(cleaned.prefix(200))
+        guard let value else { return fallback }
+        return String(value.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200))
     }
 
     var primaryButtonColor: Color {
@@ -359,7 +386,8 @@ final class RaffleModel: ObservableObject {
     let updates = AppUpdater()
     let avatarCache = AvatarCache()
     weak var mainWindow: NSWindow?
-    enum Screen: Equatable { case home, raffle, winner }
+    weak var settingsWindow: NSWindow?
+    enum Screen: Equatable { case home, timer, raffle, winner }
     enum Modal: String, Identifiable, Equatable {
         case settings, help, avatarStatus, manualList, prizes
         var id: String { rawValue }
@@ -423,6 +451,25 @@ final class RaffleModel: ObservableObject {
     @Published var errorMessage: String?
 
     var visualPool: [Member] = []
+
+    func attachMainWindow(_ window: NSWindow) {
+        mainWindow = window
+        if let settingsWindow, settingsWindow.parent !== window {
+            settingsWindow.parent?.removeChildWindow(settingsWindow)
+            window.addChildWindow(settingsWindow, ordered: .above)
+        }
+    }
+
+    func attachSettingsWindow(_ window: NSWindow) {
+        settingsWindow = window
+        guard let mainWindow, window !== mainWindow else { return }
+        if window.parent !== mainWindow {
+            window.parent?.removeChildWindow(window)
+            window.collectionBehavior.insert(.fullScreenAuxiliary)
+            mainWindow.addChildWindow(window, ordered: .above)
+        }
+        window.makeKeyAndOrderFront(nil)
+    }
     private var visualOverrides: [Int: Member] = [:]
     private var spinStarted = Date.distantPast
     private var spinStartDistance = 0.0
@@ -972,7 +1019,7 @@ struct BonRaffleApp: App {
     @Environment(\.openWindow) private var openWindow
 
     init() {
-        #if !BON_RAFFLE_UPDATE_TEST
+        #if !BON_RAFFLE_UPDATE_TEST && !BON_RAFFLE_PREVIEW
         let defaults = UserDefaults.standard
         let oldID = "ru.fan-fable.bonraffle"
         let currentID = "com.bonraffle.app"
@@ -1030,6 +1077,7 @@ struct BonRaffleApp: App {
         Window("Настройки — Bon Raffle", id: "settings") {
             SettingsView(model: model)
                 .frame(minWidth: 820, minHeight: 600)
+                .background(MainWindowReader { model.attachSettingsWindow($0) })
         }
         .defaultSize(width: 1060, height: 780)
         Window("Обновления — Bon Raffle", id: "updates") {
@@ -1121,14 +1169,18 @@ private struct MainView: View {
     private let timer = Timer.publish(every: 1.0 / 144.0, on: .main, in: .common).autoconnect()
     @State private var countdownRemaining: TimeInterval = 300
     @State private var countdownDeadline: Date?
+    @State private var homeTimerMinutes = 5
+    @State private var homeTimerSeconds = 0
+    @State private var homeTimerLoaded = false
+    @State private var countdownHovered = false
     @State private var modeHovered = false
     @State private var drumHovered = false
 
-    private var configuredCountdown: Int { min(max(model.settings.countdownSeconds ?? 300, 60), 86_400) }
+    private var configuredCountdown: Int { min(max(model.settings.countdownSeconds ?? 300, 10), 86_400) }
 
     private var countdownText: String {
-        let label = (model.settings.countdownCaption ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        return label.isEmpty ? "Конкурс начнётся через" : String(label.prefix(200))
+        guard let label = model.settings.countdownCaption else { return "Конкурс начнётся через" }
+        return String(label.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200))
     }
 
     private var countdownClock: String {
@@ -1138,12 +1190,32 @@ private struct MainView: View {
             : String(format: "%02d:%02d", seconds / 60, seconds % 60)
     }
 
+    private var homeTimerDuration: Int? {
+        guard (0...1440).contains(homeTimerMinutes), (0...59).contains(homeTimerSeconds) else { return nil }
+        let duration = homeTimerMinutes * 60 + homeTimerSeconds
+        return (10...86_400).contains(duration) ? duration : nil
+    }
+
+    private func saveHomeTimerDuration() {
+        guard homeTimerLoaded, let duration = homeTimerDuration,
+              model.settings.countdownSeconds != duration else { return }
+        model.settings.countdownSeconds = duration
+    }
+
+    private func startHomeTimer() {
+        guard let duration = homeTimerDuration, model.remainingCount > 0, !model.importing else { return }
+        model.settings.countdownSeconds = duration
+        countdownRemaining = Double(duration)
+        countdownDeadline = Date().addingTimeInterval(Double(duration))
+        countdownHovered = false
+        model.screen = .timer
+    }
+
     private func toggleCountdown() {
         if let deadline = countdownDeadline {
             countdownRemaining = max(0, deadline.timeIntervalSinceNow)
             countdownDeadline = nil
-        } else {
-            if countdownRemaining <= 0 { countdownRemaining = Double(configuredCountdown) }
+        } else if countdownRemaining > 0 {
             countdownDeadline = Date().addingTimeInterval(countdownRemaining)
         }
     }
@@ -1165,7 +1237,8 @@ private struct MainView: View {
                     Group {
                         switch model.screen {
                         case .home: home
-                        case .raffle: raffle(in: geometry.size)
+                        case .timer: introCountdown(in: geometry.size)
+                        case .raffle: raffle()
                         case .winner: winnerView
                         }
                     }
@@ -1178,19 +1251,38 @@ private struct MainView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .onAppear { countdownRemaining = Double(configuredCountdown); model.updates.automaticCheck() }
-        .onChange(of: model.settings.countdownSeconds) { _, _ in
-            countdownDeadline = nil
-            countdownRemaining = Double(configuredCountdown)
+        .onAppear {
+            let duration = configuredCountdown
+            homeTimerMinutes = duration / 60
+            homeTimerSeconds = duration % 60
+            countdownRemaining = Double(duration)
+            homeTimerLoaded = true
+            model.updates.automaticCheck()
         }
-        .onChange(of: model.settings.showCountdown) { _, enabled in
-            if enabled != true {
+        .onChange(of: homeTimerMinutes) { _, _ in saveHomeTimerDuration() }
+        .onChange(of: homeTimerSeconds) { _, _ in saveHomeTimerDuration() }
+        .onChange(of: model.screen) { oldScreen, newScreen in
+            if oldScreen == .timer && newScreen != .timer {
                 countdownDeadline = nil
                 countdownRemaining = Double(configuredCountdown)
+                countdownHovered = false
+            }
+        }
+        .onReceive(timer) { now in
+            model.tick(now)
+            guard model.screen == .timer, let deadline = countdownDeadline else { return }
+            let remaining = max(0, deadline.timeIntervalSince(now))
+            if remaining <= 0 {
+                countdownRemaining = 0
+                countdownDeadline = nil
+                if model.remainingCount > 0 { model.openRaffle() }
+                else { model.screen = .home }
+            } else if abs(remaining - countdownRemaining) >= 1.0 / 60.0 {
+                countdownRemaining = remaining
             }
         }
         .background(MainWindowReader { window in
-            model.mainWindow = window
+            model.attachMainWindow(window)
             lifecycle.attachMainWindow(window, startFullScreen: model.settings.fullScreen)
         })
         .sheet(item: $model.modal) { modal in
@@ -1290,9 +1382,30 @@ private struct MainView: View {
                             .frame(maxWidth: .infinity)
                         if model.maxExporting { ProgressView("Получение списка MAX…") }
                     }
+                    Toggle("Таймер перед розыгрышем", isOn: Binding(
+                        get: { model.settings.showIntroCountdown ?? false },
+                        set: { model.settings.showIntroCountdown = $0 }
+                    ))
+                    .toggleStyle(.switch)
+                    .frame(maxWidth: 350)
+                    if model.settings.showIntroCountdown == true {
+                        VStack(spacing: 12) {
+                            HStack(spacing: 18) {
+                                homeTimerField("Минуты", value: $homeTimerMinutes, in: 0...1440)
+                                homeTimerField("Секунды", value: $homeTimerSeconds, in: 0...59)
+                            }
+                            Button("Запустить таймер") { startHomeTimer() }
+                                .disabled(homeTimerDuration == nil || model.remainingCount == 0 || model.importing)
+                                .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor,
+                                                                     minWidth: 190, minHeight: 38))
+                                .modifier(DefaultActionWhen(enabled: true))
+                        }
+                        .padding(14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(.black.opacity(0.15)))
+                    }
                     Button(model.prizeMode ? "Открыть розыгрыш призов" : "Открыть розыгрыш") { model.openRaffle() }
                         .disabled(model.remainingCount == 0 || model.importing)
-                        .keyboardShortcut(.defaultAction)
+                        .modifier(DefaultActionWhen(enabled: model.settings.showIntroCountdown != true))
                         .buttonStyle(PrimaryActionButtonStyle(color: model.appearance.primaryButtonColor,
                                                              minWidth: 190, minHeight: 38))
                         .frame(maxWidth: .infinity)
@@ -1310,6 +1423,18 @@ private struct MainView: View {
         .scrollDisabled(modeHovered)
     }
 
+    private func homeTimerField(_ title: String, value: Binding<Int>, in range: ClosedRange<Int>) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title).font(.caption).foregroundStyle(.white.opacity(0.85))
+            HStack(spacing: 6) {
+                TextField(title, value: value, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 66)
+                Stepper(title, value: value, in: range).labelsHidden()
+            }
+        }
+    }
+
     private func modeButton(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
@@ -1323,45 +1448,64 @@ private struct MainView: View {
         .buttonStyle(.plain)
     }
 
-    private func raffle(in size: CGSize) -> some View {
-        let roomy = size.height >= 850 || ((model.mainWindow?.styleMask.contains(.fullScreen) ?? false) && size.height >= 720)
-        let diameter = roomy ? min(156, max(132, min(size.width * 0.14, size.height * 0.19))) : 108.0
-        let scale = diameter / 108.0
+    private func introCountdown(in size: CGSize) -> some View {
+        let diameter = min(440, max(240, min(size.width * 0.6, size.height * 0.59)))
+        let progress = max(0, min(1, countdownRemaining / Double(configuredCountdown)))
+        return VStack(spacing: 20) {
+            if !countdownText.isEmpty {
+                Text(countdownText)
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 620)
+            }
+            Button(action: toggleCountdown) {
+                ZStack {
+                    Circle().stroke(.white.opacity(0.24), lineWidth: 12)
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(model.appearance.countdownRingColor,
+                                style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Text(countdownClock)
+                        .font(.system(size: diameter * 0.18, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                    if countdownHovered {
+                        Label(countdownDeadline == nil ? "Продолжить" : "Пауза",
+                              systemImage: countdownDeadline == nil ? "play.fill" : "pause.fill")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14).padding(.vertical, 7)
+                            .background(model.appearance.primaryButtonColor, in: Capsule())
+                            .offset(y: diameter * 0.23)
+                    }
+                }
+                .frame(width: diameter, height: diameter)
+                .modifier(CountdownCircleSurface(glassEnabled: liquidGlassAvailable && (model.settings.useLiquidGlass ?? true)))
+                .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .onHover { countdownHovered = $0 }
+            .animation(.easeOut(duration: 0.12), value: countdownHovered)
+            .accessibilityLabel(countdownDeadline == nil ? "Продолжить таймер" : "Поставить таймер на паузу")
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func raffle() -> some View {
         return GeometryReader { viewport in
         ScrollView {
         VStack(spacing: 10) {
-            if model.settings.showCountdown == true {
-                VStack(spacing: 8) {
-                    Text(countdownText)
-                        .font(.callout).multilineTextAlignment(.center)
-                        .frame(maxWidth: 440)
-                    Button(action: toggleCountdown) {
-                        ZStack {
-                            Circle().stroke(.white.opacity(0.22), lineWidth: 8 * scale)
-                            Circle()
-                                .trim(from: 0, to: max(0, min(1, countdownRemaining / Double(configuredCountdown))))
-                                .stroke(model.appearance.countdownRingColor, style: StrokeStyle(lineWidth: 8 * scale, lineCap: .round))
-                                .rotationEffect(.degrees(-90))
-                            VStack(spacing: 2) {
-                                Text(countdownClock).font(.system(size: 22 * scale, weight: .bold, design: .rounded))
-                                Text(countdownDeadline == nil ? "Запустить" : "Пауза")
-                                    .font(.system(size: 10 * scale))
-                            }
-                        }
-                        .frame(width: diameter, height: diameter)
-                        .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(countdownRemaining <= 0 ? "Запустить заново" : countdownDeadline == nil ? "Запустить таймер" : "Поставить таймер на паузу")
-                }
-            }
             if model.appearance.showRemainingHeader {
                 VStack(spacing: 4) {
                 Text(model.remainingCount.formatted())
                     .font(.system(size: 42, weight: .bold, design: .rounded)).foregroundStyle(gold)
-                Text(model.prizeMode ? model.appearance.prizesDisplayCaption : model.appearance.participantsDisplayCaption)
-                    .font(.caption).tracking(1.2).multilineTextAlignment(.center)
-                    .frame(maxWidth: 440)
+                let caption = model.prizeMode ? model.appearance.prizesDisplayCaption : model.appearance.participantsDisplayCaption
+                if !caption.isEmpty {
+                    Text(caption)
+                        .font(.caption).tracking(1.2).multilineTextAlignment(.center)
+                        .frame(maxWidth: 440)
+                }
                 }
             }
             RaffleDrumView(model: model)
@@ -1379,18 +1523,6 @@ private struct MainView: View {
         .frame(minHeight: viewport.size.height, alignment: .center)
         }
         .scrollDisabled(drumHovered)
-        .onReceive(timer) { now in
-            model.tick(now)
-            if let deadline = countdownDeadline {
-                let remaining = max(0, deadline.timeIntervalSince(now))
-                if remaining <= 0 {
-                    countdownDeadline = nil
-                    model.settings.showCountdown = false
-                } else if abs(remaining - countdownRemaining) >= 0.05 {
-                    countdownRemaining = remaining
-                }
-            }
-        }
         }
     }
 
@@ -1539,6 +1671,7 @@ private struct AvatarActivityView: View {
                 .frame(width: 42, height: 42)
             }
             .buttonStyle(.plain)
+            .focusable(false)
             .help(cache.batchTotal > 0
                   ? "Аватары: \(cache.batchCompleted) из \(cache.batchTotal), осталось \(max(0, cache.batchTotal - cache.batchCompleted))"
                   : "Загрузка аватаров — нажмите для подробностей")
@@ -2496,17 +2629,7 @@ private struct SettingsView: View {
                 Toggle("Показывать аватары", isOn: $model.settings.showAvatars)
                 Toggle("Уменьшить эффекты", isOn: $model.settings.reduceEffects)
             }
-            Section("Таймер над барабаном") {
-                Toggle("Показывать таймер", isOn: Binding(
-                    get: { model.settings.showCountdown ?? false },
-                    set: { model.settings.showCountdown = $0 }
-                ))
-                Stepper(value: Binding(
-                    get: { min(max((model.settings.countdownSeconds ?? 300) / 60, 1), 1440) },
-                    set: { model.settings.countdownSeconds = $0 * 60 }
-                ), in: 1...1440) {
-                    Text("Длительность: \((model.settings.countdownSeconds ?? 300) / 60) мин")
-                }
+            Section("Таймер перед розыгрышем") {
                 TextField("Текст над таймером", text: Binding(
                     get: { model.settings.countdownCaption ?? "Конкурс начнётся через" },
                     set: { model.settings.countdownCaption = String($0.prefix(200)) }
@@ -2515,7 +2638,7 @@ private struct SettingsView: View {
                     get: { model.appearance.countdownRingColor },
                     set: { model.appearance.countdownRingHex = RaffleAppearance.hex(for: $0) }
                 ), supportsOpacity: false)
-                Text("Подпись — до 200 символов. Нажмите на круг над барабаном, чтобы запустить или приостановить отсчёт. При нуле таймер сразу скроется и выключится.")
+                Text("Таймер запускается с главной. Пустая подпись скрывается. Нажмите на большой круг, чтобы приостановить или продолжить отсчёт.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Анимация победы") {
@@ -2589,7 +2712,7 @@ private struct SettingsView: View {
                     get: { model.appearance.prizesCaption },
                     set: { model.appearance.prizesCaption = String($0.prefix(200)) }
                 ))
-                Text("До 200 символов. Пустое поле показывает стандартную подпись.")
+                Text("До 200 символов. Пустое поле скрывает подпись.")
                     .font(.caption).foregroundStyle(.secondary)
                 ColorPicker("Цвет фона барабана", selection: Binding(
                     get: { model.appearance.drumColor },

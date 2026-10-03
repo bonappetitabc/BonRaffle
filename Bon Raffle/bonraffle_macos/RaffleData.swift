@@ -23,7 +23,7 @@ struct RaffleSettings: Codable {
     var backgroundDim = 55
     var maxChatID: String? = nil
     var maxAPIHost: String? = nil
-    var showCountdown: Bool? = nil
+    var showIntroCountdown: Bool? = nil
     var countdownSeconds: Int? = nil
     var countdownCaption: String? = nil
 }
@@ -45,7 +45,9 @@ struct WinnerHistory: Codable {
 enum RaffleStore {
     static let folder: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        #if BON_RAFFLE_UPDATE_TEST
+        #if BON_RAFFLE_PREVIEW
+        return base.appendingPathComponent("Bon Raffle Preview", isDirectory: true)
+        #elseif BON_RAFFLE_UPDATE_TEST
         return base.appendingPathComponent("Bon Raffle Update Test", isDirectory: true)
         #else
         let destination = base.appendingPathComponent("Settings", isDirectory: true)

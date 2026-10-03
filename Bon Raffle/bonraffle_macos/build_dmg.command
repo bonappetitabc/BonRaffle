@@ -4,10 +4,13 @@ set -euo pipefail
 cd "${0:A:h}"
 ROOT="$PWD"
 TEST_UPDATES=0
+PREVIEW=0
 if [[ "${1:-}" == "--test-updates" ]]; then
   TEST_UPDATES=1
+elif [[ "${1:-}" == "--preview" ]]; then
+  PREVIEW=1
 elif (( $# > 0 )); then
-  print -u2 "Параметр: --test-updates для отдельной тестовой копии обновлений."
+  print -u2 "Параметры: --preview для тестовой копии розыгрыша или --test-updates для проверки обновлений."
   exit 1
 fi
 
@@ -31,6 +34,9 @@ SWIFT_FLAGS=(-D BON_RAFFLE_NATIVE)
 if (( TEST_UPDATES )); then
   SWIFT_FLAGS+=(-D BON_RAFFLE_UPDATE_TEST)
   print "Тест обновлений: отдельное приложение и данные; версия сравнения 2.2.0."
+elif (( PREVIEW )); then
+  SWIFT_FLAGS+=(-D BON_RAFFLE_PREVIEW)
+  print "Превью: отдельное приложение, данные и токен MAX."
 fi
 if (( SDK_MAJOR >= 26 )); then
   SWIFT_FLAGS+=(-D HAS_LIQUID_GLASS)
@@ -46,6 +52,9 @@ APP="$ROOT/Bon Raffle.app"
 if (( TEST_UPDATES )); then
   BUILD="$ROOT/.build-update-test"
   APP="$ROOT/Bon Raffle Update Test.app"
+elif (( PREVIEW )); then
+  BUILD="$ROOT/.build-preview"
+  APP="$ROOT/Bon Raffle Preview.app"
 fi
 mkdir -p "$BUILD" "$APP/Contents/MacOS" "$APP/Contents/Resources"
 export MACOSX_DEPLOYMENT_TARGET=15.0
@@ -53,7 +62,13 @@ export MACOSX_DEPLOYMENT_TARGET=15.0
 print "[1/6] Проверка Swift и загрузки CSV..."
 xcrun swiftc -frontend -parse "${SWIFT_FLAGS[@]}" \
   "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/BonRaffle.swift"
-xcrun swiftc -O -sdk "$SDK" "$ROOT/RaffleData.swift" "$ROOT/AppUpdates.swift" "$ROOT/ImportSelfTest.swift" \
+SELFTEST_FLAGS=()
+if (( PREVIEW )); then
+  SELFTEST_FLAGS+=(-D BON_RAFFLE_PREVIEW)
+elif (( TEST_UPDATES )); then
+  SELFTEST_FLAGS+=(-D BON_RAFFLE_UPDATE_TEST)
+fi
+xcrun swiftc -O -sdk "$SDK" "${SELFTEST_FLAGS[@]}" "$ROOT/RaffleData.swift" "$ROOT/AppUpdates.swift" "$ROOT/ImportSelfTest.swift" \
   -o "$BUILD/import-selftest"
 "$BUILD/import-selftest"
 
@@ -77,6 +92,10 @@ if (( TEST_UPDATES )); then
   /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Bon Raffle Update Test' "$APP/Contents/Info.plist"
   /usr/libexec/PlistBuddy -c 'Set :CFBundleName Bon Raffle Update Test' "$APP/Contents/Info.plist"
   /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 2.2.0' "$APP/Contents/Info.plist"
+elif (( PREVIEW )); then
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.bonraffle.preview' "$APP/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Bon Raffle Preview' "$APP/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleName Bon Raffle Preview' "$APP/Contents/Info.plist"
 fi
 ditto "$ROOT/Resources/background-bon-raffle.png" "$APP/Contents/Resources/background-bon-raffle.png"
 ditto "$ROOT/Resources/logo-bon-raffle.png" "$APP/Contents/Resources/logo-bon-raffle.png"
@@ -116,6 +135,8 @@ print "[6/6] Создание DMG..."
 DMG="$ROOT/BonRaffle-macOS15-plus-${APP_VERSION}.dmg"
 if (( TEST_UPDATES )); then
   DMG="$ROOT/BonRaffle-macOS-update-test.dmg"
+elif (( PREVIEW )); then
+  DMG="$ROOT/BonRaffle-macOS-preview-2026-10-03.dmg"
 fi
 TEMP_DMG="$STAGING_ROOT/BonRaffle.dmg"
 # Use the established UDIF tooling; diskutil image UDZO is unavailable on macOS 15.

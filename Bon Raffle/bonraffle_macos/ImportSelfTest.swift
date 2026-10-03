@@ -26,6 +26,20 @@ struct ImportSelfTest {
               history.listFingerprint != WinnerHistory.fingerprint(for: Array(members.reversed())) else {
             throw ImportError.invalid("Проверка исключения победителей не прошла.")
         }
+        var timerSettings = RaffleSettings()
+        timerSettings.showIntroCountdown = true
+        timerSettings.countdownSeconds = 91
+        timerSettings.countdownCaption = ""
+        let restoredTimer = try JSONDecoder().decode(RaffleSettings.self, from: JSONEncoder().encode(timerSettings))
+        guard restoredTimer.showIntroCountdown == true, restoredTimer.countdownSeconds == 91,
+              restoredTimer.countdownCaption == "" else {
+            throw ImportError.invalid("Настройки большого таймера не сохранились.")
+        }
+        #if BON_RAFFLE_PREVIEW
+        guard RaffleStore.folder.lastPathComponent == "Bon Raffle Preview" else {
+            throw ImportError.invalid("Превью использует общую папку данных.")
+        }
+        #endif
         let testFolder = FileManager.default.temporaryDirectory
             .appendingPathComponent("bonraffle-migration-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: testFolder) }
@@ -50,6 +64,7 @@ struct ImportSelfTest {
         print("Проверка ограничения импорта форматом CSV: OK")
         print("Проверка исключения победителей: OK")
         print("Проверка сохранения сброса фона, логотипа и аватара: OK")
+        print("Проверка сохранения таймера и пустой подписи: OK")
         let releaseJSON = """
         [{"tag_name":"windows-v9.0.0","draft":false,"prerelease":false,"assets":[]},
          {"tag_name":"macos-v2.3.0","draft":false,"prerelease":false,"body":"Changes","assets":[
