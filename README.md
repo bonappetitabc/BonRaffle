@@ -2,13 +2,13 @@
   <img src="Bon%20Raffle/bonraffle_winui/Assets/logo-bon-raffle.png" alt="Bon Raffle" width="125">
 </p>
 
-Приложение для розыгрышей на **Windows** и **macOS**. Подходит ведущим мероприятий, организаторам конкурсов и администраторам сообществ мессенджера MAX. Проводите розыгрыш среди людей, столиков и других записей или разыгрывайте призы с заданным количеством и относительным шансом. Списки можно создать прямо в приложении, загрузить из CSV или выгрузить из канала MAX через бота.
-
-*Bon Raffle is a raffle app for Windows and macOS with participant lists, weighted prizes and messenger MAX roster export.*
-
 <p align="center">
   <a href="https://bonappetitabc.github.io/BonRaffle/">Website</a> · <a href="https://github.com/bonappetitabc/BonRaffle/releases/latest">Releases</a>
 </p>
+
+Приложение для розыгрышей на **Windows** и **macOS**. Подходит ведущим мероприятий, организаторам конкурсов и администраторам сообществ мессенджера MAX. Проводите розыгрыш среди людей, столиков и других записей или разыгрывайте призы с заданным количеством и относительным шансом. Списки можно создать прямо в приложении, загрузить из CSV или выгрузить из канала MAX через бота.
+
+*Bon Raffle is a raffle app for Windows and macOS with participant lists, weighted prizes and messenger MAX roster export.*
 
 ## Как выглядит
 
