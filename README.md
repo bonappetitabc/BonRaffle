@@ -50,6 +50,18 @@
 
 ![Главный экран участников на macOS](docs/screenshots/home-participants-macos.png)
 
+**Таймер на главной**
+
+![Настройка таймера перед розыгрышем на macOS](docs/screenshots/home-timer-macos.png)
+
+**Отсчёт перед розыгрышем**
+
+![Большой таймер на macOS](docs/screenshots/countdown-macos.png)
+
+**Пауза при наведении на таймер**
+
+![Подсказка паузы на таймере macOS](docs/screenshots/countdown-hover-macos.png)
+
 **Загрузка участников из MAX**
 
 ![Загрузка участников из MAX на macOS](docs/screenshots/max-loading-macos.png)
