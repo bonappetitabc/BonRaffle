@@ -13,6 +13,18 @@
 <details>
 <summary>Скриншоты Windows</summary>
 
+**Таймер на главной**
+
+![Настройка таймера перед розыгрышем на Windows](docs/screenshots/home-timer-windows.png)
+
+**Отсчёт перед розыгрышем**
+
+![Большой таймер на Windows](docs/screenshots/countdown-windows.png)
+
+**Пауза при наведении на таймер**
+
+![Подсказка паузы на таймере Windows](docs/screenshots/countdown-hover-windows.png)
+
 **Загрузка участников из MAX**
 
 ![Загрузка участников из MAX на Windows](docs/screenshots/max-loading-windows.png)
