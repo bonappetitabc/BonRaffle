@@ -9,7 +9,7 @@
 !/.github/
 
 /.github/*
-!/.github/README.md
+!/.github/PAGES.md
 !/.github/workflows/
 /.github/workflows/*
 !/.github/workflows/bon-raffle-pages.yml
