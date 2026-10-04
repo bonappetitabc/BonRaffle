@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -150,17 +149,5 @@ public static class PrizeStore
         finally { if (File.Exists(temp)) File.Delete(temp); }
     }
 
-    public static Prize Draw(IReadOnlyList<Prize> entries)
-    {
-        var available = entries.Where(p => p.Quantity > 0 && p.Weight > 0).ToArray();
-        var total = available.Sum(p => p.Weight);
-        if (total <= 0) throw new InvalidOperationException("Доступные призы закончились.");
-        var ticket = RandomNumberGenerator.GetInt32(total);
-        foreach (var prize in available)
-        {
-            if (ticket < prize.Weight) return prize;
-            ticket -= prize.Weight;
-        }
-        throw new InvalidOperationException("Не удалось выбрать приз.");
-    }
+    public static Prize Draw(IReadOnlyList<Prize> entries) => RaffleEngine.DrawPrize(entries);
 }

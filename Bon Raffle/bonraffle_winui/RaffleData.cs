@@ -42,9 +42,11 @@ public sealed class RaffleSettings
     [JsonPropertyName("primary_button_color")] public string PrimaryButtonColor { get; set; } = "#D2691E";
     [JsonPropertyName("primary_button_color_version")] public int PrimaryButtonColorVersion { get; set; }
     [JsonPropertyName("show_remaining_header")] public bool ShowRemainingHeader { get; set; } = true;
+    [JsonPropertyName("show_winner_position")] public bool ShowWinnerPosition { get; set; }
     [JsonPropertyName("participants_caption")] public string ParticipantsCaption { get; set; } = "ЕЩЁ МОГУТ ВЫИГРАТЬ";
     [JsonPropertyName("prizes_caption")] public string PrizesCaption { get; set; } = "ДОСТУПНЫХ ВИДОВ ПРИЗОВ";
     [JsonPropertyName("show_intro_countdown")] public bool ShowIntroCountdown { get; set; }
+    [JsonPropertyName("verifiable_draw")] public bool VerifiableDraw { get; set; }
     [JsonPropertyName("countdown_seconds")] public int CountdownSeconds { get; set; } = 300;
     [JsonPropertyName("countdown_caption")] public string CountdownCaption { get; set; } = "Конкурс начнётся через";
     [JsonPropertyName("countdown_ring_color")] public string CountdownRingColor { get; set; } = "#D2691E";

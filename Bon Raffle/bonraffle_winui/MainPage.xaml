@@ -53,6 +53,8 @@
                             <Button x:Name="ManualListButton" Content="Создать свой список" Click="ManualList_Click" HorizontalAlignment="Center" MinWidth="190" MinHeight="34" />
                             <Button x:Name="PrizeListButton" Content="Создать или изменить призы" Click="PrizeRaffle_Click" HorizontalAlignment="Center" MinWidth="190" MinHeight="34" />
                             <Button x:Name="MaxExportButton" Content="Выгрузить участников из MAX" Click="MaxExport_Click" HorizontalAlignment="Center" MinWidth="190" MinHeight="34" />
+                            <Button Content="Экспортировать результаты (PDF)" Click="ExportDrawPdf_Click" HorizontalAlignment="Center" MinWidth="230" MinHeight="34" />
+                            <Button Content="Очистить историю результатов" Click="ClearDrawLog_Click" HorizontalAlignment="Center" MinWidth="230" MinHeight="34" />
                             <ToggleSwitch x:Name="HomeTimerToggle" Header="Таймер перед розыгрышем" Toggled="HomeTimerToggle_Toggled" HorizontalAlignment="Center" />
                             <Border x:Name="HomeTimerControls" Visibility="Collapsed" Background="#33172830" CornerRadius="12" Padding="16" HorizontalAlignment="Center">
                                 <StackPanel Spacing="12" HorizontalAlignment="Center">
@@ -175,7 +177,7 @@
                             <Border x:Name="WinnerIdBadge" Background="#26FFFFFF" CornerRadius="10" Padding="16,8" HorizontalAlignment="Center" Margin="0,5,0,0">
                                 <TextBlock x:Name="WinnerId" FontSize="14" Foreground="#F2E3D0" TextAlignment="Center" TextWrapping="Wrap" />
                             </Border>
-                            <TextBlock x:Name="WinnerPosition" FontSize="13" Foreground="#F2E3D0" TextAlignment="Center" Visibility="Collapsed" />
+                            <Button x:Name="WinnerPositionButton" Click="WinnerPosition_Click" FontSize="13" Foreground="#F2E3D0" HorizontalAlignment="Center" Visibility="Collapsed" Background="#66331C10" BorderThickness="0" CornerRadius="8" />
                             <Button x:Name="CopyWinnerIdButton" Content="Скопировать ID" Click="CopyWinnerId_Click" HorizontalAlignment="Center" MinWidth="156" BorderBrush="#99F5C978" Foreground="White" />
                         </StackPanel>
                     </Border>

@@ -591,7 +591,7 @@ public sealed partial class MainPage : Page
     private void OpenRaffle_Click(object sender, RoutedEventArgs e)
     {
         if (_spinning || _importOpening) return;
-        var eligible = _members.Where(m => !_winnerIds.Contains(m.Id)).ToArray();
+        var eligible = RaffleEngine.Remaining(_members, _winnerIds);
         if (eligible.Length == 0) return;
         _visualPool = eligible.Length <= 120 ? [.. eligible] : RandomNumberGenerator.GetItems(eligible, 120).ToList();
         _poolPosition = RandomNumberGenerator.GetInt32(_visualPool.Count);
@@ -1039,7 +1039,7 @@ public sealed partial class MainPage : Page
     private void Spin_Click(object sender, RoutedEventArgs e)
     {
         if (_spinning) return;
-        var eligible = _members.Where(m => !_winnerIds.Contains(m.Id)).ToArray();
+        var eligible = RaffleEngine.Remaining(_members, _winnerIds);
         if (eligible.Length == 0) return;
         if (_prizeMode)
         {
@@ -1047,7 +1047,7 @@ public sealed partial class MainPage : Page
             _winner = eligible.FirstOrDefault(m => m.Id == selectedPrize.Id);
             if (_winner is null) return;
         }
-        else _winner = eligible[RandomNumberGenerator.GetInt32(eligible.Length)];
+        else _winner = RaffleEngine.DrawParticipant(eligible);
         _spinning = true;
         _spinStartOffset = _offset;
         _spinTargetSteps = Math.Max(12, (int)Math.Ceiling(
@@ -1065,6 +1065,21 @@ public sealed partial class MainPage : Page
         if (_winner is null) return;
         _spinning = false;
         StopRendering();
+        var eligibleCount = RaffleEngine.Remaining(_members, _winnerIds).Length;
+        var recordedPrize = _prizeMode ? _prizes.FirstOrDefault(item => item.Id == _winner.Id) : null;
+        var record = new DrawRecord
+        {
+            TimestampUtc = DateTimeOffset.UtcNow.ToString("O"),
+            Mode = _prizeMode ? "prizes" : "participants",
+            ListName = _prizeMode ? _activePrizeListName : FileStatus.Text,
+            ListFingerprint = RaffleData.Fingerprint(_members),
+            EligibleCount = eligibleCount,
+            WinnerId = _winner.Id,
+            WinnerName = _winner.Name,
+            ListPosition = _prizeMode || _winner.Id.StartsWith("manual-", StringComparison.Ordinal)
+                ? null : _members.FindIndex(m => m.Id == _winner.Id) + 1,
+            Chance = recordedPrize is null ? 1.0 / eligibleCount : RaffleEngine.PrizeChance(_prizes, recordedPrize)
+        };
         try
         {
             if (_prizeMode)
@@ -1098,6 +1113,8 @@ public sealed partial class MainPage : Page
             SpinButton.Content = _prizeMode ? "Разыграть приз" : "Выбрать победителя";
             return;
         }
+        try { await DrawLog.AppendAsync(record); }
+        catch (Exception ex) { await ShowErrorAsync("Победитель сохранён, но протокол не обновлён", ex); }
         UpdateCount();
         WinnerName.Text = _winner.Name;
         WinnerUsername.Text = string.IsNullOrWhiteSpace(_winner.Username) ? "" : "@" + _winner.Username.TrimStart('@');
@@ -1107,8 +1124,9 @@ public sealed partial class MainPage : Page
             && !_winner.Id.StartsWith("prize-", StringComparison.Ordinal);
         WinnerIdBadge.Visibility = showId ? Visibility.Visible : Visibility.Collapsed;
         CopyWinnerIdButton.Visibility = showId ? Visibility.Visible : Visibility.Collapsed;
-        WinnerPosition.Text = showId ? $"Позиция в списке: {_members.FindIndex(m => m.Id == _winner.Id) + 1:N0}" : "";
-        WinnerPosition.Visibility = showId ? Visibility.Visible : Visibility.Collapsed;
+        WinnerPositionButton.Content = showId ? "Позиция в списке: ••••  ·  Показать" : "";
+        WinnerPositionButton.Tag = showId ? $"Позиция в списке: {_members.FindIndex(m => m.Id == _winner.Id) + 1:N0}" : "";
+        WinnerPositionButton.Visibility = showId && _settings.ShowWinnerPosition ? Visibility.Visible : Visibility.Collapsed;
         SetAvatar(WinnerAvatar, _winner.Avatar);
         ShowView("winner");
         AnimateWinner();
@@ -1464,6 +1482,7 @@ public sealed partial class MainPage : Page
         var resetHomeCardButton = new Button { Content = "Вернуть стандартный вид карточки" };
         resetHomeCardButton.Click += (_, _) => { homeCardColor.Color = ParseColor("#000000"); homeCardTransparency.Value = 40; };
         var showRemaining = new ToggleSwitch { Header = "Показывать число участников над барабаном", IsOn = _settings.ShowRemainingHeader };
+        var showWinnerPosition = new ToggleSwitch { Header = "Показывать позицию на карточке победителя", IsOn = _settings.ShowWinnerPosition };
         var participantsCaption = new TextBox { Header = "Подпись над барабаном · участники", Text = _settings.ParticipantsCaption,
             MaxLength = 200, Width = 620, HorizontalAlignment = HorizontalAlignment.Left,
             TextWrapping = TextWrapping.Wrap, AcceptsReturn = false };
@@ -1619,7 +1638,7 @@ public sealed partial class MainPage : Page
         AboutSection("Участники и свои списки",
             "Загрузите CSV либо создайте в приложении несколько списков с именами, названиями или номерами столиков и картинками. Переключайте, переименовывайте и удаляйте списки. История победителей каждого своего списка сохраняется отдельно.");
         AboutSection("Участники из MAX",
-            "Подключите бота в разделе «Данные» и выгрузите участников канала или группы в CSV в папке «Загрузки». Затем загрузите CSV обычной кнопкой. Позиция победителя помогает найти его в списке MAX; сверяйте также имя, аватар и соседние записи. Внутренний ID не используется для поиска в мессенджере.");
+            "Подключите бота в разделе «Данные» и выгрузите участников канала или группы в CSV в папке «Загрузки». Затем загрузите CSV обычной кнопкой. Если нужна позиция победителя на карточке, включите её в настройках внешнего вида. Сверяйте имя, аватар и соседние записи: порядок в MAX может измениться. Внутренний ID не используется для поиска в мессенджере.");
         AboutSection("Розыгрыш призов",
             "Создавайте отдельные наборы призов с картинками, количеством и весом шанса. После выигрыша количество уменьшается, а шансы оставшихся призов пересчитываются.");
         AboutSection("Попробуйте сразу",
@@ -1671,6 +1690,7 @@ public sealed partial class MainPage : Page
             homeCardColor.Color = ParseColor("#000000");
             homeCardTransparency.Value = 40;
             showRemaining.IsOn = true;
+            showWinnerPosition.IsOn = false;
             participantsCaption.Text = "ЕЩЁ МОГУТ ВЫИГРАТЬ";
             prizesCaption.Text = "ДОСТУПНЫХ ВИДОВ ПРИЗОВ";
             countdownCaption.Text = "Конкурс начнётся через";
@@ -1724,6 +1744,7 @@ public sealed partial class MainPage : Page
         appearancePanel.Children.Add(ColorSettingButton("Цвет выбранной строки", selectionColor));
         appearancePanel.Children.Add(ColorSettingButton("Цвет карточки победителя", winnerCardColor));
         appearancePanel.Children.Add(ColorSettingButton("Цвет рамки карточки победителя", winnerCardBorderColor));
+        appearancePanel.Children.Add(showWinnerPosition);
         appearancePanel.Children.Add(ColorSettingButton("Цвет основных кнопок", primaryButtonColor));
         var dataPanel = new StackPanel { Spacing = 14 };
         var maxChatId = new TextBox { Header = "chat_id канала или группы MAX", Text = _settings.MaxChatId,
@@ -1967,6 +1988,7 @@ public sealed partial class MainPage : Page
             _settings.HomeCardColor = Hex(homeCardColor.Color);
             _settings.HomeCardOpacity = 1 - homeCardTransparency.Value / 100;
             _settings.ShowRemainingHeader = showRemaining.IsOn;
+            _settings.ShowWinnerPosition = showWinnerPosition.IsOn;
             _settings.ParticipantsCaption = participantsCaption.Text;
             _settings.PrizesCaption = prizesCaption.Text;
             _settings.CountdownCaption = countdownCaption.Text;
@@ -2004,6 +2026,14 @@ public sealed partial class MainPage : Page
                 await RaffleData.SaveSettingsAsync(_settings);
                 ApplySettings(refreshBackground: pickBackgroundRequested || resetBackground,
                     refreshLogo: pickLogoRequested || resetLogo);
+                if (_winner is not null && WinnerView.Visibility == Visibility.Visible)
+                {
+                    var importedWinner = !_winner.Id.StartsWith("manual-", StringComparison.Ordinal)
+                        && !_winner.Id.StartsWith("prize-", StringComparison.Ordinal);
+                    WinnerPositionButton.Visibility = _settings.ShowWinnerPosition && importedWinner
+                        ? Visibility.Visible : Visibility.Collapsed;
+                    WinnerPositionButton.Content = "Позиция в списке: ••••  ·  Показать";
+                }
                 if (wasFullscreen != _settings.Fullscreen) SetFullscreen(_settings.Fullscreen);
                 RefreshVisibleAvatars();
             }
@@ -2119,6 +2149,21 @@ public sealed partial class MainPage : Page
 
     private void PageRoot_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
+        var clickerForward = e.Key is Windows.System.VirtualKey.PageDown
+            or Windows.System.VirtualKey.Right or Windows.System.VirtualKey.Space;
+        if (clickerForward)
+        {
+            if (RaffleView.Visibility != Visibility.Visible || _settingsOpening || _avatarDialogOpening ||
+                VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot).Count > 0) return;
+            e.Handled = true;
+            if (!_spinning && SpinButton.IsEnabled)
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (!_spinning && RaffleView.Visibility == Visibility.Visible)
+                        Spin_Click(SpinButton, new RoutedEventArgs());
+                });
+            return;
+        }
         if (e.Key != Windows.System.VirtualKey.Enter) return;
         if (_settingsOpening || _avatarDialogOpening ||
             VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot).Count > 0) return;

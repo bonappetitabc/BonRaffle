@@ -80,8 +80,8 @@ public sealed partial class MainPage
                     var labels = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
                     labels.Children.Add(new TextBlock { Text = prize.Name, FontSize = 15, MaxWidth = 260,
                         TextTrimming = TextTrimming.CharacterEllipsis });
-                    var chance = prize.Quantity == 0 || total == 0 ? "0%" :
-                        ((double)prize.Weight / total).ToString("P1", new System.Globalization.CultureInfo("ru-RU"));
+                    var chance = RaffleEngine.PrizeChance(entries, prize)
+                        .ToString("P1", new System.Globalization.CultureInfo("ru-RU"));
                     labels.Children.Add(new TextBlock { Text = $"Осталось: {prize.Quantity} · Шанс: {chance} · Вес: {prize.Weight}",
                         FontSize = 11, Opacity = 0.72 });
                     row.Children.Add(labels); list.Items.Add(row);
