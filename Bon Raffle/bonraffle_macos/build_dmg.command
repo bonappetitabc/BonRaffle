@@ -61,25 +61,25 @@ export MACOSX_DEPLOYMENT_TARGET=15.0
 
 print "[1/6] Проверка Swift и загрузки CSV..."
 xcrun swiftc -frontend -parse "${SWIFT_FLAGS[@]}" \
-  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/BonRaffle.swift"
+  "$ROOT/RaffleData.swift" "$ROOT/DrawPdf.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/RaffleModel.swift" "$ROOT/BonRaffle.swift"
 SELFTEST_FLAGS=()
 if (( PREVIEW )); then
   SELFTEST_FLAGS+=(-D BON_RAFFLE_PREVIEW)
 elif (( TEST_UPDATES )); then
   SELFTEST_FLAGS+=(-D BON_RAFFLE_UPDATE_TEST)
 fi
-xcrun swiftc -O -sdk "$SDK" "${SELFTEST_FLAGS[@]}" "$ROOT/RaffleData.swift" "$ROOT/AppUpdates.swift" "$ROOT/ImportSelfTest.swift" \
+xcrun swiftc -O -sdk "$SDK" "${SELFTEST_FLAGS[@]}" "$ROOT/RaffleData.swift" "$ROOT/DrawPdf.swift" "$ROOT/AppUpdates.swift" "$ROOT/ImportSelfTest.swift" \
   -o "$BUILD/import-selftest"
 "$BUILD/import-selftest"
 
 print "[2/6] Сборка для Apple Silicon..."
 xcrun swiftc -O -sdk "$SDK" "${SWIFT_FLAGS[@]}" -target arm64-apple-macosx15.0 \
-  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/BonRaffle.swift" \
+  "$ROOT/RaffleData.swift" "$ROOT/DrawPdf.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/RaffleModel.swift" "$ROOT/BonRaffle.swift" \
   -o "$BUILD/BonRaffle-arm64"
 
 print "[3/6] Сборка для Intel..."
 xcrun swiftc -O -sdk "$SDK" "${SWIFT_FLAGS[@]}" -target x86_64-apple-macosx15.0 \
-  "$ROOT/RaffleData.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/BonRaffle.swift" \
+  "$ROOT/RaffleData.swift" "$ROOT/DrawPdf.swift" "$ROOT/MaxRosterExporter.swift" "$ROOT/AppUpdates.swift" "$ROOT/AppLifecycle.swift" "$ROOT/RaffleModel.swift" "$ROOT/BonRaffle.swift" \
   -o "$BUILD/BonRaffle-x86_64"
 
 print "[4/6] Создание универсального приложения..."

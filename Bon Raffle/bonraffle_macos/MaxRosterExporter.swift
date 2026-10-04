@@ -7,7 +7,8 @@ enum MaxConnection {
     #elseif BON_RAFFLE_UPDATE_TEST
     private static let service = "com.bonraffle.updatetest.max"
     #else
-    private static let service = "com.bonraffle.app.max"
+    private static let service = ProcessInfo.processInfo.environment["BON_RAFFLE_TEST_DATA_DIR"] == nil
+        ? "com.bonraffle.app.max" : "com.bonraffle.test.max"
     #endif
     private static let account = "bot-token"
 

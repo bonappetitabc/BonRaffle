@@ -24,6 +24,8 @@ struct RaffleSettings: Codable {
     var maxChatID: String? = nil
     var maxAPIHost: String? = nil
     var showIntroCountdown: Bool? = nil
+    var verifiableDraw: Bool? = nil
+    var showWinnerPosition: Bool? = nil
     var countdownSeconds: Int? = nil
     var countdownCaption: String? = nil
 }
@@ -44,6 +46,10 @@ struct WinnerHistory: Codable {
 
 enum RaffleStore {
     static let folder: URL = {
+        if let isolated = ProcessInfo.processInfo.environment["BON_RAFFLE_TEST_DATA_DIR"],
+           !isolated.isEmpty {
+            return URL(fileURLWithPath: isolated, isDirectory: true)
+        }
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         #if BON_RAFFLE_PREVIEW
         return base.appendingPathComponent("Bon Raffle Preview", isDirectory: true)
@@ -226,6 +232,199 @@ struct Prize: Codable, Identifiable {
     var weight: Int
 }
 
+// Selection rules are independent of SwiftUI and accept fixed tickets in self-tests.
+enum RaffleEngine {
+    static func remaining(_ members: [Member], excluding winnerIDs: Set<String>) -> [Member] {
+        members.filter { !winnerIDs.contains($0.id) }
+    }
+
+    static func drawParticipant(_ eligible: [Member], nextIndex: (Int) -> Int = { Int.random(in: 0..<$0) }) -> Member? {
+        guard !eligible.isEmpty else { return nil }
+        let index = nextIndex(eligible.count)
+        guard eligible.indices.contains(index) else { return nil }
+        return eligible[index]
+    }
+
+    static func drawPrize(_ entries: [Prize], nextTicket: (Int) -> Int = { Int.random(in: 0..<$0) }) throws -> Prize {
+        let available = entries.filter { $0.quantity > 0 && $0.weight > 0 }
+        let total = available.reduce(0) { $0 + $1.weight }
+        guard total > 0 else { throw ImportError.invalid("Доступные призы закончились.") }
+        var ticket = nextTicket(total)
+        guard (0..<total).contains(ticket) else { throw ImportError.invalid("Неверное случайное число.") }
+        for prize in available {
+            if ticket < prize.weight { return prize }
+            ticket -= prize.weight
+        }
+        throw ImportError.invalid("Не удалось выбрать приз.")
+    }
+
+    static func prizeChance(_ entries: [Prize], prize: Prize) -> Double {
+        guard prize.quantity > 0 && prize.weight > 0 else { return 0 }
+        let total = entries.filter { $0.quantity > 0 && $0.weight > 0 }.reduce(0) { $0 + $1.weight }
+        return total > 0 ? Double(prize.weight) / Double(total) : 0
+    }
+}
+
+struct DrawRecord: Codable {
+    let timestampUtc: String
+    let mode: String
+    let listName: String
+    let listFingerprint: String
+    let eligibleCount: Int
+    let winnerId: String
+    let winnerName: String
+    let chance: Double
+    var proof: DrawProof? = nil
+    var listPosition: Int? = nil
+}
+
+struct DrawProof: Codable {
+    let snapshot: String
+    let snapshotHash: String
+    let commitment: String
+    let seedHex: String
+    let audienceCode: String
+    let ticket: Int
+}
+
+struct RaffleProof {
+    private static let format = "BonRaffleProofV1"
+    private let seed: Data
+    let snapshot: String
+    let snapshotHash: String
+    let commitment: String
+
+    private init(snapshot: String, seed: Data) {
+        self.seed = seed
+        self.snapshot = snapshot
+        let digest = Data(SHA256.hash(data: Data(snapshot.utf8)))
+        snapshotHash = Self.hex(digest)
+        commitment = Self.hex(Data(SHA256.hash(data: seed + digest)))
+    }
+
+    static func participants(_ eligible: [Member], seed: Data? = nil) -> RaffleProof {
+        create(mode: "participants", candidates: eligible.map { ($0.id, 1) }, seed: seed)
+    }
+
+    static func prizes(_ entries: [Prize], seed: Data? = nil) -> RaffleProof {
+        create(mode: "prizes", candidates: entries.filter { $0.quantity > 0 && $0.weight > 0 }
+            .map { ($0.id, $0.weight) }, seed: seed)
+    }
+
+    private static func create(mode: String, candidates: [(String, Int)], seed: Data?) -> RaffleProof {
+        let rows = candidates.map { Data($0.0.utf8).base64EncodedString() + ":" + String($0.1) }
+        let randomSeed = SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
+        return RaffleProof(snapshot: format + "\n" + mode + "\n" + rows.joined(separator: "\n"),
+                           seed: seed ?? randomSeed)
+    }
+
+    func ticket(code: String, upperBound: Int) -> Int {
+        precondition(!code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && upperBound > 0)
+        let range: UInt64 = 1 << 32
+        let limit = range - range % UInt64(upperBound)
+        var counter = 0
+        while true {
+            let message = Data((snapshotHash + "\n" + code + "\n" + String(counter)).utf8)
+            let hash = HMAC<SHA256>.authenticationCode(for: message, using: SymmetricKey(data: seed))
+            let bytes = Array(hash)
+            let value = UInt64(bytes[0]) << 24 | UInt64(bytes[1]) << 16 |
+                UInt64(bytes[2]) << 8 | UInt64(bytes[3])
+            if value < limit { return Int(value % UInt64(upperBound)) }
+            counter += 1
+        }
+    }
+
+    func reveal(code: String, ticket: Int) -> DrawProof {
+        DrawProof(snapshot: snapshot, snapshotHash: snapshotHash, commitment: commitment,
+                  seedHex: Self.hex(seed), audienceCode: code, ticket: ticket)
+    }
+
+    static func verify(_ record: DrawRecord) -> Bool {
+        guard let proof = record.proof, let seed = Data(hex: proof.seedHex), seed.count == 32,
+              !proof.audienceCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        let draft = RaffleProof(snapshot: proof.snapshot, seed: seed)
+        guard draft.snapshotHash == proof.snapshotHash, draft.commitment == proof.commitment else { return false }
+        let lines = proof.snapshot.components(separatedBy: "\n")
+        guard lines.count >= 3, lines[0] == format, lines[1] == record.mode else { return false }
+        let candidates: [(String, Int)] = lines.dropFirst(2).compactMap { line in
+            let parts = line.components(separatedBy: ":")
+            guard parts.count == 2, let data = Data(base64Encoded: parts[0]),
+                  let id = String(data: data, encoding: .utf8), let weight = Int(parts[1]), weight > 0 else { return nil }
+            return (id, weight)
+        }
+        guard !candidates.isEmpty, candidates.count == record.eligibleCount,
+              candidates.count == lines.count - 2,
+              record.mode == "prizes" || candidates.allSatisfy({ $0.1 == 1 }) else { return false }
+        let total = record.mode == "prizes" ? candidates.reduce(0) { $0 + $1.1 } : candidates.count
+        guard total > 0 else { return false }
+        var ticket = draft.ticket(code: proof.audienceCode, upperBound: total)
+        guard ticket == proof.ticket else { return false }
+        if record.mode == "participants" { return candidates[ticket].0 == record.winnerId }
+        for candidate in candidates {
+            if ticket < candidate.1 { return candidate.0 == record.winnerId }
+            ticket -= candidate.1
+        }
+        return false
+    }
+
+    private static func hex(_ data: Data) -> String {
+        data.map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+private extension Data {
+    init?(hex: String) {
+        guard hex.count.isMultiple(of: 2) else { return nil }
+        var bytes = [UInt8]()
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let next = hex.index(index, offsetBy: 2)
+            guard let value = UInt8(hex[index..<next], radix: 16) else { return nil }
+            bytes.append(value)
+            index = next
+        }
+        self.init(bytes)
+    }
+}
+
+enum DrawLog {
+    private static func file(in folder: URL) -> URL { folder.appendingPathComponent("draw-log.json") }
+
+    static func load(from folder: URL = RaffleStore.folder) throws -> [DrawRecord] {
+        let location = file(in: folder)
+        guard FileManager.default.fileExists(atPath: location.path) else { return [] }
+        return try JSONDecoder().decode([DrawRecord].self, from: Data(contentsOf: location))
+    }
+
+    static func append(_ record: DrawRecord, to folder: URL = RaffleStore.folder) throws {
+        var records = try load(from: folder)
+        records.append(record)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try JSONEncoder().encode(records).write(to: file(in: folder), options: .atomic)
+    }
+
+    static func clear(from folder: URL = RaffleStore.folder) throws {
+        let location = file(in: folder)
+        if FileManager.default.fileExists(atPath: location.path) {
+            try FileManager.default.removeItem(at: location)
+        }
+    }
+
+    static func exportData(from folder: URL = RaffleStore.folder) throws -> Data {
+        struct Export: Encodable {
+            let schema: String
+            let exportedUtc: String
+            let draws: [DrawRecord]
+        }
+        let payload = Export(schema: "bon-raffle-draw-log-v1",
+                             exportedUtc: ISO8601DateFormatter().string(from: Date()),
+                             draws: try load(from: folder))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(payload)
+    }
+}
+
 enum PrizeStore {
     static var imageFolder: URL { RaffleStore.folder.appendingPathComponent("prize-images", isDirectory: true) }
 
@@ -266,17 +465,7 @@ enum PrizeStore {
         }
     }
 
-    static func draw(_ entries: [Prize]) throws -> Prize {
-        let available = entries.filter { $0.quantity > 0 && $0.weight > 0 }
-        let total = available.reduce(0) { $0 + $1.weight }
-        guard total > 0 else { throw ImportError.invalid("Доступные призы закончились.") }
-        var ticket = Int.random(in: 0..<total)
-        for prize in available {
-            if ticket < prize.weight { return prize }
-            ticket -= prize.weight
-        }
-        throw ImportError.invalid("Не удалось выбрать приз.")
-    }
+    static func draw(_ entries: [Prize]) throws -> Prize { try RaffleEngine.drawPrize(entries) }
 }
 
 struct PrizeListProfile: Codable, Identifiable {
